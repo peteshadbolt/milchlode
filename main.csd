@@ -1,5 +1,6 @@
-delayfeedback.csd
-Written by Iain McCurdy, 2006
+main.csd
+Pete Shadbolt.2014
+Based on code by Iain McCurdy, 2006
 
 THE delay OPCODE IS PLACED IN A SEPARATE, ALWAYS ON, INSTRUMENT FROM THE SOURCE SOUND PRODUCING INSTRUMENT.
 THE IS A COMMONLY USED TECHNIQUE WITH TIME SMEARING OPCODES AND EFFECTS LIKE REVERBS AND DELAYS.
@@ -22,7 +23,7 @@ nchnls 		= 	2	;NUMBER OF CHANNELS (2=STEREO)
 ;FLTK INTERFACE CODE;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 FLcolor	255, 255, 255, 0, 0, 0
 ;			LABEL                 | WIDTH | HEIGHT | X | Y
-		FLpanel	"delay with feedback",   500,    300,    0,  0
+		FLpanel	"M I L C H   L O D E",   500,    300,    0,  0
 
 ;                                                      	ON | OFF | TYPE | WIDTH | HEIGHT | X | Y | OPCODE | INS | STARTTIM | DUR
 gkOnOff,ihOnOff		FLbutton	"Input On/Off",	1,    0,    22,    180,     25,    5,  5,    0,      1,      0,      -1
@@ -53,6 +54,8 @@ gkporttime,ihporttime		FLslider 	"Portamento Time",		0,      2,    0,    23,    
 gkingain,ihingain		FLslider 	"Live Input Gain",		0,      1,    0,    23,             -1,   140,     20,  350,   5
 
 ;SET_INITIAL_VALUES		VALUE | HANDLE
+		FLsetVal_i	1, 	    ihOnOff
+		FLsetVal_i	.5, 	ihingain
 		FLsetVal_i	.5, 	ihdlt
 		FLsetVal_i	0.5, 	ihmix
 		FLsetVal_i	0.7, 	ihfeedamt
