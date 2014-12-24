@@ -1,4 +1,4 @@
 all: run 
 
 run:
-	csound main.csd
+	csound delay.csd
