@@ -13,12 +13,12 @@ TODO: implement octave down/up (like old delay pedal), key control, panic button
 <CsInstruments>
 
 sr = 44100 ;Sample rate
-ksmps = 20 ;Number of audio samples in each control cycle 
+ksmps = 4 ;Number of audio samples in each control cycle 
 nchnls = 2 ;Number of channels (2=stereo)
 0dbfs = 1 ;Maximum amplitude
 gkporttime = 0.3; portamento time
 
-;FLTK GUI interface
+; FLTK GUI interface
 FLcolor 200, 200, 255, 0, 0, 0
 FLpanel "M I L C H L O D E", 500, 300, 0, 0, 0, 1
 gkOnOff,ihOnOff FLbutton "Input On/Off", 1, 0, 22, 180, 25, 5, 5, 0, 1, 0, -1
@@ -31,7 +31,7 @@ gkamp,ihamp FLslider "Output Amplitude Rescaling", 0, 1, 0, 23, -1, 490, 25, 5, 
 gkingain,ihingain FLslider "Input Gain", 0, 1, 0, 23, -1, 140, 20, 350, 5
 ih FLbox "Keys: ", 1, 5, 14, 490, 20, 0, 250
 
-;Set defaults
+; Set defaults
 FLsetVal_i 1, ihOnOff
 FLsetVal_i .5, ihingain
 FLsetVal_i 4, ihdlt
@@ -63,7 +63,7 @@ instr 2
 kKey FLkeyIn	
 kChanged changed kKey			
 printk2	kKey
-;if kKey=112&&kChanged=1 then
+;if kKey=112 && kChanged=1 then
     ;printf_i "awd"
     ;FLsetVal_i 0.0, gkfeedamt
 ;endif
