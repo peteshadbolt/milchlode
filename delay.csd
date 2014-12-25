@@ -27,7 +27,7 @@ gkOnOff,ihOnOff FLbutton "Input On/Off", 1, 0, 22, 180, 25, 5, 5, 0, 1, 0, -1
 ; Sliders
 gkdlt,ihdlt FLslider "Delay Time (sec)", .001, 5, 0, 23, -1, 490, 25, 5, 50
 gkmix,ihmix FLslider "Dry/Wet Mix", 0, 1, 0, 23, -1, 490, 25, 5, 100
-gkfeedamt,ihfeedamt FLslider "Feedback Ratio", -1, 1, 0, 23, -1, 490, 25, 5, 150
+gkfeedamt,ihfeedamt FLslider "Feedback Ratio", 0, 1, 0, 23, -1, 490, 25, 5, 150
 gkamp,ihamp FLslider "Output Amplitude Rescaling", 0, 1, 0, 23, -1, 490, 25, 5, 200
 gkingain,ihingain FLslider "Input Gain", 0, 1, 0, 23, -1, 140, 20, 350, 5
 ih FLbox "Keys: ", 1, 5, 14, 490, 20, 0, 250
