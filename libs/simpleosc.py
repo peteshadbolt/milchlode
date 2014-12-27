@@ -47,7 +47,6 @@ def printing_handler(addr, tags, data, source):
     print "---"
 
 
-
 def initOSCClient(ip='127.0.0.1', port=9000) :
     global basic_client
     basic_client = OSCClient()
