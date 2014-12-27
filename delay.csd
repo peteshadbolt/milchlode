@@ -11,25 +11,21 @@ nchnls = 2 ; Number of channels (2=stereo)
 0dbfs = 1  ; Maximum amplitude
 
 ; FLTK GUI interface
-FLcolor 200, 200, 255, 0, 0, 0
 FLpanel "M I L C H L O D E", 500, 300, 0, 0, 0, 1
-gkOnOff,ihOnOff FLbutton "Input On/Off", 1, 0, 22, 180, 25, 5, 5, 0, 1, 0, -1
+gkInputGain,ihInputGain FLslider "Input Gain", 0, 1, 0, 3, -1, 400, 20, 5, 5
+gkInputMute,ihInputMute FLbutton "Mute", 0, 1, 3, 85, 25, 410, 5, 0, 1, 0, -1
 
 ; Sliders
-gkdlt,ihdlt FLslider "Delay Time (sec)", .001, 5, 0, 23, -1, 490, 25, 5, 50
-gkmix,ihmix FLslider "Dry/Wet Mix", 0, 1, 0, 23, -1, 490, 25, 5, 100
-gkfeedamt,ihfeedamt FLslider "Feedback Ratio", 0, 1, 0, 23, -1, 490, 25, 5, 150
-gkamp,ihamp FLslider "Output Amplitude Rescaling", 0, 1, 0, 23, -1, 490, 25, 5, 200
-gkingain,ihingain FLslider "Input Gain", 0, 1, 0, 23, -1, 140, 20, 350, 5
-ih FLbox "Keys: ", 1, 5, 14, 490, 20, 0, 250
+gkdlt,ihdlt FLslider "Delay Time (sec)", .001, 5, 0, 3, -1, 490, 25, 5, 50
+gkmix,ihmix FLslider "Dry/Wet Mix", 0, 1, 0, 3, -1, 490, 25, 5, 100
+gkfeedamt,ihfeedamt FLslider "Feedback Ratio", 0, 1, 0, 3, -1, 490, 25, 5, 150
 
 ; Set defaults
-FLsetVal_i 1, ihOnOff
-FLsetVal_i .5, ihingain
-FLsetVal_i 4, ihdlt
+FLsetVal_i 1, ihInputMute
+FLsetVal_i .5, ihInputGain
+FLsetVal_i 1, ihdlt
 FLsetVal_i 0.5, ihmix
 FLsetVal_i 0.95, ihfeedamt
-FLsetVal_i .7, ihamp
 
 FLpanel_end ;End of GUI
 FLrun ;Run the FLTK thread
@@ -38,14 +34,14 @@ FLrun ;Run the FLTK thread
 instr 1 
 
 ; Turn off with the switch
-if gkOnOff=0 then 
-    turnoff 
+if gkInputMute=0 then 
+turnoff 
 endif
 
 ; Get input from mic/line
 asigL, asigR ins 
-gasigL = asigL * gkingain 
-gasigR = asigR * gkingain 
+gasigL = asigL * gkInputGain 
+gasigR = asigR * gkInputGain 
 endin
 
 ; Instr 2 is the delay line
@@ -66,6 +62,7 @@ delayw gasigR + (adelsigR * gkfeedamt) ;Feedback
 aL ntrpol gasigL, adelsigL, gkmix
 aR ntrpol gasigR, adelsigR, gkmix
 
+gkamp = .7;
 outs aL * gkamp, aR * gkamp ; Mix wet/dry
 clear gasigL, gasigR        ; Clear global audio sends
 endin

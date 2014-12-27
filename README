@@ -5,7 +5,7 @@ Global Sliders:
 - BPM
 - Input gain
 - Amount of input to send to delay line
-- Feedback amount
+- Delay feedback amount
 
 Global Switches:
 - OSC Master/Minion
@@ -15,5 +15,6 @@ Channel Sliders:
 
 Channel buttons:
 - Clear 
-- Mute/unmute 
+- Level
+- Mute/Unmute
 - Pitch down
