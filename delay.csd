@@ -10,15 +10,6 @@ ksmps = 20 ; Number of audio samples in each control cycle
 nchnls = 2 ; Number of channels (2=stereo)
 0dbfs = 1  ; Maximum amplitude
 
-; Delay parameters
-gkporttime init 0.3 ; Portamento time
-;gkdlt init 5        ; Max delay
-;gkmix init .5       ; Dry/wet
-;gkfeedamt init .95  ; Feedback ratio
-;gkamp init .7       ; Output amplitude rescaling
-;gkingain init .5    ; Input gain
-;gkOnOff init 1      ; Input on off
-
 ; FLTK GUI interface
 FLcolor 200, 200, 255, 0, 0, 0
 FLpanel "M I L C H L O D E", 500, 300, 0, 0, 0, 1
@@ -60,10 +51,7 @@ endin
 ; Instr 2 is the delay line
 instr 2 
 
-kporttime linseg 0, .001, 1, 1, 1  ; A short envelope
-kporttime = kporttime * gkporttime ; TODO: remove this
-kdlt portk gkdlt, kporttime        ; Apply portamento
-adlt interp kdlt                   ; Interpolate
+adlt = gkdlt
 
 ;Left channel
 abufferL delayr 5 ;Buffer
