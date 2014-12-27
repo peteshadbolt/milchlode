@@ -1,3 +1,15 @@
-adc => Gain g1 => dac;
-0.5 => g1.gain;
-1000::second => now;
+// feedforward
+adc => Gain g => dac;
+// feedback
+g => Gain feedback => DelayL delay => g;
+
+// set delay parameters
+5::second => delay.max => delay.delay;
+// set feedback
+.5 => feedback.gain;
+// set effects mix
+.75 => delay.gain;
+
+// infinite time loop
+while( true ) 1::second => now;
+
