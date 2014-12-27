@@ -1,22 +1,23 @@
-main.csd
-Pete Shadbolt.2014
-Based on code by Iain McCurdy, 2006
-ksmps MAY NEED TO BE LOW (AND kr THEREFORE HIGH) WHEN WORKING WITH SHORT DELAY TIMES DEFINED INITIALLY AT KRATE
-TODO: implement octave down/up (like old delay pedal), key control, panic button
-
 <CsoundSynthesizer>
-
-<CsOptions>
--iadc -odac -dm0
+<CsOptions> 
+-iadc -odac -dm0 
 </CsOptions>
 
 <CsInstruments>
+; CSound parameters
+sr = 44100 ; Sample rate
+ksmps = 20 ; Number of audio samples in each control cycle
+nchnls = 2 ; Number of channels (2=stereo)
+0dbfs = 1  ; Maximum amplitude
 
-sr = 44100 ;Sample rate
-ksmps = 4 ;Number of audio samples in each control cycle 
-nchnls = 2 ;Number of channels (2=stereo)
-0dbfs = 1 ;Maximum amplitude
-gkporttime = 0.3; portamento time
+; Delay parameters
+gkporttime init 0.3 ; Portamento time
+;gkdlt init 5        ; Max delay
+;gkmix init .5       ; Dry/wet
+;gkfeedamt init .95  ; Feedback ratio
+;gkamp init .7       ; Output amplitude rescaling
+;gkingain init .5    ; Input gain
+;gkOnOff init 1      ; Input on off
 
 ; FLTK GUI interface
 FLcolor 200, 200, 255, 0, 0, 0
@@ -26,7 +27,7 @@ gkOnOff,ihOnOff FLbutton "Input On/Off", 1, 0, 22, 180, 25, 5, 5, 0, 1, 0, -1
 ; Sliders
 gkdlt,ihdlt FLslider "Delay Time (sec)", .001, 5, 0, 23, -1, 490, 25, 5, 50
 gkmix,ihmix FLslider "Dry/Wet Mix", 0, 1, 0, 23, -1, 490, 25, 5, 100
-gkfeedamt,ihfeedamt FLslider "Feedback Ratio", -1, 1, 0, 23, -1, 490, 25, 5, 150
+gkfeedamt,ihfeedamt FLslider "Feedback Ratio", 0, 1, 0, 23, -1, 490, 25, 5, 150
 gkamp,ihamp FLslider "Output Amplitude Rescaling", 0, 1, 0, 23, -1, 490, 25, 5, 200
 gkingain,ihingain FLslider "Input Gain", 0, 1, 0, 23, -1, 140, 20, 350, 5
 ih FLbox "Keys: ", 1, 5, 14, 490, 20, 0, 250
@@ -47,7 +48,7 @@ instr 1
 
 ; Turn off with the switch
 if gkOnOff=0 then 
-turnoff 
+    turnoff 
 endif
 
 ; Get input from mic/line
@@ -59,19 +60,10 @@ endin
 ; Instr 2 is the delay line
 instr 2 
 
-; Sense keyboard
-kKey FLkeyIn	
-kChanged changed kKey			
-printk2	kKey
-;if kKey=112 && kChanged=1 then
-    ;printf_i "awd"
-    ;FLsetVal_i 0.0, gkfeedamt
-;endif
-
-kporttime linseg 0, .001, 1, 1, 1 ;A short envelope
-kporttime = kporttime * gkporttime ;TODO: remove this
-kdlt portk gkdlt, kporttime ;Apply portamento
-adlt interp kdlt ;Interpolate
+kporttime linseg 0, .001, 1, 1, 1  ; A short envelope
+kporttime = kporttime * gkporttime ; TODO: remove this
+kdlt portk gkdlt, kporttime        ; Apply portamento
+adlt interp kdlt                   ; Interpolate
 
 ;Left channel
 abufferL delayr 5 ;Buffer
@@ -86,15 +78,14 @@ delayw gasigR + (adelsigR * gkfeedamt) ;Feedback
 aL ntrpol gasigL, adelsigL, gkmix
 aR ntrpol gasigR, adelsigR, gkmix
 
-outs aL * gkamp, aR * gkamp ;Mix wet/dry
-clear gasigL, gasigR ;Clear global audio sends
+outs aL * gkamp, aR * gkamp ; Mix wet/dry
+clear gasigL, gasigR        ; Clear global audio sends
 endin
 
 </CsInstruments>
 
 <CsScore>
 i 2 0 -1 ;Instrument 2 plays a held note
-
 f 0 3600 ;Keep performance going
 </CsScore>
 
