@@ -1,2 +1,2 @@
 #!/bin/bash
-chuck.alsa --bufsize64 chuck.ck
+./chuck --bufsize64 chuck.ck
