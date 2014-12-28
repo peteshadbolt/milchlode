@@ -1,5 +1,5 @@
 #!/bin/bash
-chuck --bufsize64 chuck.ck &
-python ./osctest.py
+chuck --bufsize64 main.ck &
+python ./main.py
 pkill -SIGINT chuck
 
