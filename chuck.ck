@@ -1,39 +1,65 @@
-// feedforward
+// Effects chain
 adc => Gain g => dac;
-// feedback
 g => Gain feedback => DelayL delay => g;
 
-// set delay parameters
-5::second => delay.max => delay.delay;
-// set feedback
-.5 => feedback.gain;
-// set effects mix
-.75 => delay.gain;
+// Delay parameters
+10::second => delay.max;
+5::second => delay.delay;
+1 => feedback.gain;
+1 => delay.gain;
 
-// infinite time loop
-<<< "hello from chuck (waiting for OSC)" >>>;
-
-// create our OSC receiver
+// Create our OSC receiver
 OscRecv recv;
-
-// use port 9000
 9000 => recv.port;
-// start listening (launch thread)
 recv.listen();
-
-// create an address in the receiver, store in new variable
 recv.event( "/test, f" ) @=> OscEvent oe;
 
-// infinite event loop
-while ( true )
-{
-    // wait for event to arrive
+// Event loop
+while (true) {
+    // Wait for event to arrive
     oe => now;
 
-    // grab the next message from the queue. 
-    while ( oe.nextMsg() != 0 )
-    { 
-      <<< oe.getFloat() >>>;
+    // Grab the next message from the queue. 
+    while ( oe.nextMsg() != 0 ) { 
+        float val;
+        <<<val>>>;
+        oe.getFloat() => val;
+        val::second => delay.delay;
     }
 }
 
+
+/*
+// Listen for messages regarding ADC input
+fun void oscListener( int port, string osctype ) {
+// create our OSC receiver
+OscRecv recv;
+port => recv.port;
+recv.listen();
+
+int val;
+string type;
+
+// create an address in the receiver, store in new variable
+recv.event( osctype ) @=> OscEvent oe;
+
+while( true ) {
+// wait for osc event to arrive
+oe => now;
+
+while( oe.nextMsg() ) {
+oe.getInt() => val;
+osctype => type;
+
+if( type == leftraw ) {
+val => raw.freq;
+}
+else if( type == leftavg ) {
+val => avg.freq;
+}
+
+me.yield();
+}
+}
+} 
+*/
