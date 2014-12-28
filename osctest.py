@@ -1,15 +1,26 @@
 from libs.simpleosc import *
 import wx
 
-def testosc():
-    server = OSCServer (("127.0.0.1", 9000))
-    server.addDefaultHandlers()
+class OSCSlider(wx.Panel):
+    ''' A GUI slider '''
+    def __init__(self, parent, label, min_value=0, max_value=100, default_value=0):
+        ''' Constructor '''
+        wx.Panel.__init__(self, parent)
+        sizer=wx.BoxSizer(wx.HORIZONTAL)
+        self.indicator=wx.StaticText(self, label=label)
+        sizer.Add(self.indicator, 0, wx.RIGHT, 10)
+        self.slider=wx.Slider(self, value=default_value, minValue=min_value, maxValue=max_value)
+        sizer.Add(self.slider, 1, wx.EXPAND)
+        self.SetSizerAndFit(sizer)
+        self.slider.Bind(wx.EVT_SCROLL, self.update)
 
-    initOSCClient(port=9000)
-    sendOSCMsg("/test", [.1])
-    closeOSC()
+    def update(self, evt):
+        """ Send OSC messages """
+        value=float(self.slider.GetValue())
+        sendOSCMsg("/test", [value])
 
-class gui_head(wx.Frame):
+
+class MainGUI(wx.Frame):
     """ A simple GUI to talk to Chuck """
     def __init__(self):
         """ Constructor """
@@ -26,12 +37,8 @@ class gui_head(wx.Frame):
         # The main sizer
         self.mainsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        # Bits and pieces
-        self.status=wx.StaticText(self, label="Parameter", style=wx.ST_NO_AUTORESIZE)
-        self.mainsizer.Add(self.status, 0)
-
-        self.slider=wx.Slider(self, value=0, minValue=0, maxValue=100)
-        self.mainsizer.Add(self.slider, 1)
+        self.slider=OSCSlider(self, "Input gain", default_value=50)
+        self.mainsizer.Add(self.slider, 1, wx.ALL, 5)
 
         # Put things together
         self.SetSizerAndFit(self.mainsizer)
@@ -49,4 +56,6 @@ class gui_head(wx.Frame):
 
 
 if __name__ == "__main__":
-    gui_head()
+    initOSCClient(ip="127.0.0.1", port=9000)
+    g=MainGUI()
+    closeOSC()
