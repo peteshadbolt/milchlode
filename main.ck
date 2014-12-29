@@ -24,6 +24,7 @@ class InputListener extends OSCListener {
     fun void handle(OscEvent oe){
         oe.getFloat() => g.gain;
         oe.getFloat() => float a;
+        <<< "Edit input" >>>;
     }
 }
 
@@ -33,13 +34,28 @@ class DelayListener extends OSCListener
     fun void handle(OscEvent oe){
         oe.getFloat()::second => delay.delay;
         oe.getFloat() => feedback.gain;
+        <<< "Edit delay" >>>;
     }
 }
 
+// define child class Y
+class ChannelListener extends OSCListener
+{
+    fun void handle(OscEvent oe){
+        oe.getInt() => int channel;
+        oe.getFloat();
+        oe.getFloat();
+        <<< "Edit channel"  >>>;
+    }
+}
+
+
 InputListener il;
 DelayListener dl;
+ChannelListener cl;
 spork ~ il.run(9000, "/input, f, f");
 spork ~ dl.run(9000, "/delay, f, f");
+spork ~ cl.run(9000, "/channel, i, f, f");
 
 // Loop forever
 while(true) { 1::second => now; }

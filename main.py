@@ -3,25 +3,15 @@ import wx
 
 class OSCSlider(wx.Panel):
     ''' A GUI slider '''
-    def __init__(self, parent, label, min_value=0, max_value=1, default_value=0, show_value=True, align=True):
+    def __init__(self, parent, label, min_value=0, max_value=1, default_value=0, align=True):
         ''' Constructor '''
-        self.show_value=show_value
         wx.Panel.__init__(self, parent)
         sizer=wx.BoxSizer(wx.HORIZONTAL)
         label=wx.StaticText(self, label=label, size=(100,15) if align else None)
         sizer.Add(label, 0, wx.RIGHT, 10)
         self.slider=wx.Slider(self, value=default_value*100, minValue=min_value*100, maxValue=max_value*100)
         sizer.Add(self.slider, 1, wx.EXPAND)
-        if show_value:
-            self.indicator=wx.StaticText(self, label="--", size=(50,15))
-            sizer.Add(self.indicator, 0, wx.LEFT, 10)
         self.SetSizerAndFit(sizer)
-        self.slider.Bind(wx.EVT_SCROLL, self.update)
-        self.update(None)
-
-    def update(self, evt):
-        value=self.slider.GetValue()/100.
-        if self.show_value: self.indicator.SetLabel("%s" % value)
 
 
 class InputPanel(wx.Panel):
@@ -35,9 +25,9 @@ class InputPanel(wx.Panel):
         font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
         sizer.Add(label, 0, wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
-        self.gain = OSCSlider(self, "Gain", default_value=.5, show_value=False, align=False)
+        self.gain = OSCSlider(self, "Gain", default_value=.5, align=False)
         sizer.Add(self.gain, 1, wx.ALL, 5)
-        self.thru = OSCSlider(self, "Thru", default_value=.5, show_value=False, align=False)
+        self.thru = OSCSlider(self, "Thru", default_value=.5, align=False)
         sizer.Add(self.thru, 1, wx.ALL, 5)
 
         self.button = wx.Button(self, 1, "Kill input")
@@ -46,9 +36,16 @@ class InputPanel(wx.Panel):
         
         self.gain.slider.Bind(wx.EVT_SCROLL, self.update)
         self.thru.slider.Bind(wx.EVT_SCROLL, self.update)
-        self.update(None)
+        self.button.Bind(wx.EVT_BUTTON, self.kill)
+        self.update()
 
-    def update(self, evt):
+    def kill(self, evt):
+        """ Kill input """
+        self.gain.slider.SetValue(0)
+        self.thru.slider.SetValue(0)
+        self.update()
+
+    def update(self, evt=None):
         """ Send OSC messages """
         a=self.gain.slider.GetValue()/100.
         b=self.thru.slider.GetValue()/100.
@@ -94,12 +91,71 @@ class Channel(wx.Panel):
         self.index=index
         wx.Panel.__init__(self, parent)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetBackgroundColour((255,0,0))
 
         label = wx.StaticText(self, label="CH%d" % self.index)
         font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
         sizer.Add(label, 0, wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
+
+        self.gain = OSCSlider(self, "Gain", default_value=0, align=False)
+        sizer.Add(self.gain, 0, wx.ALL|wx.EXPAND, 3)
+
+        self.pan = OSCSlider(self, "Pan", min_value=-1, max_value=1, default_value=0, align=False)
+        sizer.Add(self.pan, 0, wx.ALL|wx.EXPAND, 3)
+
+        self.record = wx.ToggleButton(self, 1, "Arm")
+        sizer.Add(self.record, 0, wx.ALL|wx.EXPAND, 3)
+
+        self.mute = wx.ToggleButton(self, 1, "Mute")
+        sizer.Add(self.mute, 0, wx.ALL|wx.EXPAND, 3)
+
+        self.fx = wx.ToggleButton(self, 1, "FX")
+        sizer.Add(self.fx, 0, wx.ALL|wx.EXPAND, 3)
+
+        self.clear = wx.Button(self, 1, "Clear")
+        sizer.Add(self.clear, 0, wx.ALL|wx.EXPAND, 3)
+        #self.gain.slider.Bind(wx.EVT_SCROLL, self.update)
+
+        self.gain.slider.Bind(wx.EVT_SCROLL, self.update)
+        self.pan.slider.Bind(wx.EVT_SCROLL, self.update)
+
         self.SetSizerAndFit(sizer)
+
+    def update(self, evt=None):
+        data = [self.index,
+                self.gain.slider.GetValue()/100.,
+                self.pan.slider.GetValue()/100.]
+                #self.record.GetValue(),
+                #self.mute.GetValue(),
+                #self.fx.GetValue()]
+        try:
+            sendOSCMsg("/channel", data)
+        except OSCClientError:
+            pass
+
+class CommsPanel(wx.Panel):
+    """ OSC comms """
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        label = wx.StaticText(self, label="Sync:")
+        font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
+        sizer.Add(label, 0, wx.TOP|wx.BOTTOM|wx.RIGHT|wx.EXPAND, 5)
+
+        self.master = wx.ToggleButton(self, 1, "Master/Minion")
+        sizer.Add(self.master, 0, wx.ALL, 3)
+
+        self.ip=wx.TextCtrl(self, value="127.0.0.1")
+        self.ip.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL))
+        sizer.Add(self.ip, 0, wx.ALL, 3)
+
+        self.port=wx.TextCtrl(self, value="9000")
+        self.port.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL))
+        sizer.Add(self.port, 0, wx.ALL, 3)
+
+        self.SetSizerAndFit(sizer)
+
+
 
 
 class ChannelPanel(wx.Panel):
@@ -142,24 +198,27 @@ class MainGUI(wx.Frame):
         # The main sizer
         self.mainsizer = wx.BoxSizer(wx.VERTICAL)
 
+        self.commsPanel = CommsPanel(self)
+        self.mainsizer.Add(self.commsPanel, 0, wx.EXPAND|wx.ALL, 5)
+
+        line=wx.StaticLine(self); self.mainsizer.Add(line, 0, wx.EXPAND|wx.ALL, 1)
+
         self.inputPanel = InputPanel(self)
         self.mainsizer.Add(self.inputPanel, 0, wx.EXPAND|wx.ALL, 5)
 
-        line=wx.StaticLine(self); self.mainsizer.Add(line, 0, wx.EXPAND|wx.ALL, 5)
+        line=wx.StaticLine(self); self.mainsizer.Add(line, 0, wx.EXPAND|wx.ALL, 1)
 
         self.delayPanel = DelayPanel(self)
         self.mainsizer.Add(self.delayPanel, 0, wx.EXPAND|wx.ALL, 5)
 
-        line=wx.StaticLine(self); self.mainsizer.Add(line, 0, wx.EXPAND|wx.ALL, 5)
+        line=wx.StaticLine(self); self.mainsizer.Add(line, 0, wx.EXPAND|wx.ALL, 1)
 
         self.channelPanel = ChannelPanel(self)
         self.mainsizer.Add(self.channelPanel, 1, wx.EXPAND|wx.ALL, 5)
 
-
         # Put things together
         self.SetSizerAndFit(self.mainsizer)
         self.Show()
-        self.SetSize((400,500))
 
 
     def populate_left_panel(self):
