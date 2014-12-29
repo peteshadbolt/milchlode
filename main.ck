@@ -8,29 +8,41 @@ g => Gain feedback => DelayL delay => g;
 1 => feedback.gain;
 1 => delay.gain;
 
-// Create our OSC receiver
-spork ~ inputEventHandler(9000);
+// OSC listener class
+class OSCListener {
+    fun void run(int port, string address) {
+        OscRecv recv; port => recv.port; recv.listen(); 
+        recv.event(address) @=> OscEvent oe;
+        while (true) { oe => now; while (oe.nextMsg() != 0) { this.handle(oe); } }
+        me.yield();
+    }
+    fun void handle(OscEvent oe){};
+}
+
+// define child class Y
+class InputListener extends OSCListener {
+    fun void handle(OscEvent oe){
+        oe.getFloat() => g.gain;
+        oe.getFloat() => float a;
+    }
+}
+
+// define child class Y
+class DelayListener extends OSCListener
+{
+    fun void handle(OscEvent oe){
+        oe.getFloat()::second => delay.delay;
+        oe.getFloat() => feedback.gain;
+    }
+}
+
+InputListener il;
+DelayListener dl;
+spork ~ il.run(9000, "/input, f, f");
+spork ~ dl.run(9000, "/delay, f, f");
 
 // Loop forever
 while(true) { 1::second => now; }
 
-
-inputEventHandler => awd.handler;
-
-// Event loop to deal with ADC input
-fun void inputEventHandler(int port) {
-    OscRecv recv;
-    port => recv.port;
-    recv.listen();
-    recv.event( "/input, f f" ) @=> OscEvent oe;
-    while (true) {
-        oe => now;
-        while (oe.nextMsg() != 0) { 
-            oe.getFloat() => g.gain;
-            oe.getFloat() => float a;
-        }
-    }
-    me.yield();
-}
 
 
