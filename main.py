@@ -12,6 +12,30 @@ class OSCSlider(wx.Panel):
         self.slider=wx.Slider(self, value=default_value*100, minValue=min_value*100, maxValue=max_value*100)
         sizer.Add(self.slider, 1, wx.EXPAND)
         self.SetSizerAndFit(sizer)
+        self.Bind=self.Bind
+
+
+class CommsPanel(wx.Panel):
+    """ OSC comms """
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        label = wx.StaticText(self, label="Sync:")
+        font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
+        sizer.Add(label, 0, wx.TOP|wx.BOTTOM|wx.RIGHT|wx.EXPAND, 5)
+
+        self.master = wx.ToggleButton(self, 1, "Master/Minion")
+        sizer.Add(self.master, 0, wx.ALL, 3)
+
+        self.ip=wx.TextCtrl(self, value="127.0.0.1")
+        sizer.Add(self.ip, 0, wx.ALL, 3)
+
+        self.port=wx.TextCtrl(self, value="9000")
+        sizer.Add(self.port, 0, wx.ALL, 3)
+
+        self.SetSizerAndFit(sizer)
+
 
 
 class InputPanel(wx.Panel):
@@ -31,11 +55,12 @@ class InputPanel(wx.Panel):
         sizer.Add(self.thru, 1, wx.ALL, 5)
 
         self.mute = wx.ToggleButton(self, 1, "Mute")
+        self.mute.SetValue(1)
         sizer.Add(self.mute, 0)
         self.SetSizerAndFit(sizer)
         
-        self.gain.slider.Bind(wx.EVT_SCROLL, self.update)
-        self.thru.slider.Bind(wx.EVT_SCROLL, self.update)
+        self.gain.Bind(wx.EVT_SCROLL, self.update)
+        self.thru.Bind(wx.EVT_SCROLL, self.update)
         self.mute.Bind(wx.EVT_TOGGLEBUTTON, self.update)
         self.update()
 
@@ -56,19 +81,19 @@ class DelayPanel(wx.Panel):
         wx.Panel.__init__(self, parent)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        label = wx.StaticText(self, label="Delay line:")
+        label = wx.StaticText(self, label="Delay lines:")
         font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
         sizer.Add(label, 0, wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
         self.delayTime=OSCSlider(self, "Delay time (s)", default_value=1, max_value=10)
         sizer.Add(self.delayTime, 0, wx.EXPAND|wx.ALL, 5)
 
-        self.feedback=OSCSlider(self, "Feedback", default_value=.95)
+        self.feedback=OSCSlider(self, "Feedback", default_value=.99)
         sizer.Add(self.feedback, 0, wx.EXPAND|wx.ALL, 5)
 
         self.SetSizerAndFit(sizer)
-        self.delayTime.slider.Bind(wx.EVT_SCROLL, self.update)
-        self.feedback.slider.Bind(wx.EVT_SCROLL, self.update)
+        self.delayTime.Bind(wx.EVT_SCROLL, self.update)
+        self.feedback.Bind(wx.EVT_SCROLL, self.update)
         self.update(None)
 
     def update(self, evt):
@@ -93,67 +118,27 @@ class Channel(wx.Panel):
 
         self.gain = OSCSlider(self, "Gain", default_value=0, align=False)
         sizer.Add(self.gain, 0, wx.ALL|wx.EXPAND, 3)
-
         self.pan = OSCSlider(self, "Pan", min_value=-1, max_value=1, default_value=0, align=False)
         sizer.Add(self.pan, 0, wx.ALL|wx.EXPAND, 3)
-
         self.record = wx.ToggleButton(self, 1, "Arm")
-        sizer.Add(self.record, 0, wx.ALL|wx.EXPAND, 3)
+        sizer.Add(self.record, 0, wx.ALL|wx.EXPAND if index==0 else wx.ALL|wx.EXPAND, 3)
 
         self.mute = wx.ToggleButton(self, 1, "Mute")
         sizer.Add(self.mute, 0, wx.ALL|wx.EXPAND, 3)
-
-        self.fx = wx.ToggleButton(self, 1, "FX")
-        sizer.Add(self.fx, 0, wx.ALL|wx.EXPAND, 3)
-
         self.clear = wx.Button(self, 1, "Clear")
         sizer.Add(self.clear, 0, wx.ALL|wx.EXPAND, 3)
-        #self.gain.slider.Bind(wx.EVT_SCROLL, self.update)
-
-        self.gain.slider.Bind(wx.EVT_SCROLL, self.update)
-        self.pan.slider.Bind(wx.EVT_SCROLL, self.update)
-
         self.SetSizerAndFit(sizer)
 
-    def update(self, evt=None):
-        data = [self.index,
-                self.gain.slider.GetValue()/100.,
-                self.pan.slider.GetValue()/100.]
-                #self.record.GetValue(),
-                #self.mute.GetValue(),
-                #self.fx.GetValue()]
-        try:
-            sendOSCMsg("/channel", data)
-        except OSCClientError:
-            pass
+        self.gain.Bind(wx.EVT_SCROLL, self.update)
+        self.pan.Bind(wx.EVT_SCROLL, self.update)
+        self.mute.Bind(wx.EVT_TOGGLEBUTTON, self.update)
 
-class CommsPanel(wx.Panel):
-    """ OSC comms """
-    def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        label = wx.StaticText(self, label="Sync:")
-        font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
-        sizer.Add(label, 0, wx.TOP|wx.BOTTOM|wx.RIGHT|wx.EXPAND, 5)
-
-        self.master = wx.ToggleButton(self, 1, "Master/Minion")
-        sizer.Add(self.master, 0, wx.ALL, 3)
-
-        self.ip=wx.TextCtrl(self, value="127.0.0.1")
-        self.ip.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL))
-        sizer.Add(self.ip, 0, wx.ALL, 3)
-
-        self.port=wx.TextCtrl(self, value="9000")
-        self.port.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL))
-        sizer.Add(self.port, 0, wx.ALL, 3)
-
-        self.SetSizerAndFit(sizer)
+    def update(self, evt):
+        print "Channel %d: send gain, pan, mute" % self.index
 
 
 
-
-class ChannelPanel(wx.Panel):
+class Mixer(wx.Panel):
     ''' All the channels '''
     def __init__(self, parent):
         ''' Constructor '''
@@ -163,15 +148,24 @@ class ChannelPanel(wx.Panel):
         self.channels=[]
         for i in range(4):
             c=Channel(self, index=i)
-            #self.feedback.slider.Bind(wx.EVT_SCROLL, self.update)
+            c.record.Bind(wx.EVT_TOGGLEBUTTON, self.switch_record)
+            c.record.index=i
+            c.clear.Bind(wx.EVT_BUTTON, self.clear_channel)
             self.channels.append(c)
             sizer.Add(c, 1, wx.EXPAND)
 
         self.SetSizerAndFit(sizer)
-        self.update(None)
 
-    def update(self, evt):
-        """ Send OSC messages """
+    def switch_record(self, evt):
+        """ Send OSC message to switch recording channel """
+        index = evt.GetEventObject().index
+        value = evt.GetEventObject().GetValue()
+        for i, c in enumerate(self.channels):
+            c.record.SetValue(0)
+        self.channels[index].record.SetValue(value)
+
+    def clear_channel(self, evt):
+        """ Send OSC message to clear a channel """
         pass
 
 
@@ -208,8 +202,8 @@ class MainGUI(wx.Frame):
 
         line=wx.StaticLine(self); self.mainsizer.Add(line, 0, wx.EXPAND|wx.ALL, 1)
 
-        self.channelPanel = ChannelPanel(self)
-        self.mainsizer.Add(self.channelPanel, 1, wx.EXPAND|wx.ALL, 5)
+        self.mixer = Mixer(self)
+        self.mainsizer.Add(self.mixer, 1, wx.EXPAND|wx.ALL, 5)
 
         # Put things together
         self.SetSizerAndFit(self.mainsizer)

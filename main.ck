@@ -7,6 +7,7 @@ delay => Gain delaySend => mixer; // Connect delay to mixer
 // Delay parameters
 10::second => delay.max;
 5::second => delay.delay;
+0 => adc.gain;
 1 => feedback.gain;
 .5 => delaySend.gain;
 .5 => adcThru.gain;
