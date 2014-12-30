@@ -30,27 +30,22 @@ class InputPanel(wx.Panel):
         self.thru = OSCSlider(self, "Thru", default_value=.5, align=False)
         sizer.Add(self.thru, 1, wx.ALL, 5)
 
-        self.button = wx.Button(self, 1, "Kill input")
-        sizer.Add(self.button, 0)
+        self.mute = wx.ToggleButton(self, 1, "Mute")
+        sizer.Add(self.mute, 0)
         self.SetSizerAndFit(sizer)
         
         self.gain.slider.Bind(wx.EVT_SCROLL, self.update)
         self.thru.slider.Bind(wx.EVT_SCROLL, self.update)
-        self.button.Bind(wx.EVT_BUTTON, self.kill)
-        self.update()
-
-    def kill(self, evt):
-        """ Kill input """
-        self.gain.slider.SetValue(0)
-        self.thru.slider.SetValue(0)
+        self.mute.Bind(wx.EVT_TOGGLEBUTTON, self.update)
         self.update()
 
     def update(self, evt=None):
         """ Send OSC messages """
-        a=self.gain.slider.GetValue()/100.
-        b=self.thru.slider.GetValue()/100.
+        gain=self.gain.slider.GetValue()/100.
+        thru=self.thru.slider.GetValue()/100.
+        if self.mute.GetValue(): gain, thru = 0.,0.
         try:
-            sendOSCMsg("/input", [a, b])
+            sendOSCMsg("/input", [gain, thru])
         except OSCClientError:
             pass
 
@@ -65,7 +60,7 @@ class DelayPanel(wx.Panel):
         font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
         sizer.Add(label, 0, wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
-        self.delayTime=OSCSlider(self, "Delay time (s)", default_value=5, max_value=10)
+        self.delayTime=OSCSlider(self, "Delay time (s)", default_value=1, max_value=10)
         sizer.Add(self.delayTime, 0, wx.EXPAND|wx.ALL, 5)
 
         self.feedback=OSCSlider(self, "Feedback", default_value=.95)

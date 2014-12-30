@@ -1,12 +1,15 @@
 // Effects chain
-adc => Gain g => dac;
-g => Gain feedback => DelayL delay => g;
+Gain mixer => dac;  // Main mixer
+adc => Gain adcThru => mixer;       // Monitor the input 
+adc => Gain feedback => DelayL delay => feedback; // Delay line
+delay => Gain delaySend => mixer; // Connect delay to mixer
 
 // Delay parameters
 10::second => delay.max;
 5::second => delay.delay;
 1 => feedback.gain;
-1 => delay.gain;
+.5 => delaySend.gain;
+.5 => adcThru.gain;
 
 // OSC listener class
 class OSCListener {
@@ -22,8 +25,8 @@ class OSCListener {
 // define child class Y
 class InputListener extends OSCListener {
     fun void handle(OscEvent oe){
-        oe.getFloat() => g.gain;
-        oe.getFloat() => float a;
+        oe.getFloat() => adc.gain;
+        oe.getFloat() => adcThru.gain;
         <<< "Edit input" >>>;
     }
 }
