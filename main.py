@@ -45,7 +45,7 @@ class InputPanel(wx.Panel):
         wx.Panel.__init__(self, parent)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        label = wx.StaticText(self, label="Line In:")
+        label = wx.StaticText(self, label="Line in:")
         font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
         sizer.Add(label, 0, wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
