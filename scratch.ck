@@ -9,12 +9,13 @@ adc => dac; //monitor the input
 //start recording input
 1 => saveme.loop;
 0::second => saveme.playPos;
-1::second => saveme.loopEnd;
+2::second => saveme.recPos;
+2::second => saveme.loopEnd;
 
 // Start recording, wait one second, then start playing
-saveme.record(1);
-1::second => now;
+1 => saveme.record;
 1 => saveme.play;
+1 => saveme.feedback;
 
 while(true)
 {
@@ -26,19 +27,3 @@ while(true)
 
 
 
-
-/*
-// Effects chain
-adc => LiSa s => dac;  
-1::second => s.duration;
-0::second => s.recPos;
-1::second => s.playPos;
-s.loop(1);
-s.loopRec(1);
-s.play(1);
-
-
-while (true){
-        1::second => now;
-}
-*/

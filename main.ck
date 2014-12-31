@@ -1,15 +1,21 @@
 // Effects chain
-Gain mixer => dac;  // Main mixer
-adc => Gain adcThru => mixer;       // Monitor the input 
-adc => Gain feedback => DelayL delay => feedback; // Delay line
-delay => Gain delaySend => mixer; // Connect delay to mixer
+Gain mixer => dac;            // Main mixer
+adc => Gain adcThru => mixer; // Monitor the input
+adc => LiSa sample => mixer;  // Sampler
+// TODO: turn off adcThru when recording
 
-// Delay parameters
-10::second => delay.max;
-5::second => delay.delay;
-0 => adc.gain;
-1 => feedback.gain;
-.5 => delaySend.gain;
+//Times
+10::second => sample.duration;
+0::second => sample.recPos;
+1::second => sample.playPos => sample.loopEnd => sample.loopEndRec;
+
+// Start recording and playing in a loop
+1 => sample.loop => sample.record => sample.play; 
+
+// Levels
+//0 => adc.gain;
+1 => sample.feedback;
+.5 => sample.gain;
 .5 => adcThru.gain;
 
 // OSC listener class
@@ -36,8 +42,11 @@ class InputListener extends OSCListener {
 class DelayListener extends OSCListener
 {
     fun void handle(OscEvent oe){
-        oe.getFloat()::second => delay.delay;
-        oe.getFloat() => feedback.gain;
+        //TODO: this doesn't work
+        // oe.getFloat()::second => sample.recPos => sample.loopEnd => sample.loopEndRec;
+        //oe.getFloat()::second => sample.playPos => sample.loopEnd => sample.loopEndRec;
+        oe.getFloat();
+        oe.getFloat() => sample.feedback;
         <<< "Edit delay" >>>;
     }
 }

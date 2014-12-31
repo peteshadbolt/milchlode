@@ -55,7 +55,7 @@ class InputPanel(wx.Panel):
         sizer.Add(self.thru, 1, wx.ALL, 5)
 
         self.mute = wx.ToggleButton(self, 1, "Mute")
-        self.mute.SetValue(1)
+        #self.mute.SetValue(1)
         sizer.Add(self.mute, 0)
         self.SetSizerAndFit(sizer)
         
