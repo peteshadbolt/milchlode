@@ -26,7 +26,7 @@ License : LGPL
 """
 
 try :
-    from OSC import *
+    from osc import *
 except :
     print "Warning!!! you must have pyOSC installed -> https://trac.v2.nl/wiki/pyOSC"
     
