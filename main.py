@@ -102,6 +102,7 @@ class DelayPanel(wx.Panel):
         self.SetSizerAndFit(sizer)
         self.delayTime.Bind(wx.EVT_SCROLL, self.update)
         self.feedback.Bind(wx.EVT_SCROLL, self.update)
+        self.metronome.Bind(wx.EVT_TOGGLEBUTTON, self.switchMetronome)
         self.update(None)
 
     def update(self, evt):
@@ -109,6 +110,10 @@ class DelayPanel(wx.Panel):
         a=self.delayTime.slider.GetValue()/100.
         b=self.feedback.slider.GetValue()/100.
         sendOSCMsg("/delay", [a, b])
+
+    def switchMetronome(self, evt):
+        """ Send OSC messages """
+        sendOSCMsg("/metronome", [int(self.metronome.GetValue())])
 
 class Channel(wx.Panel):
     """ A single channel """
