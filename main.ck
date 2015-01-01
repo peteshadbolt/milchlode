@@ -1,20 +1,15 @@
-// Effects chain
-Gain mixer => dac;            // Main mixer
-adc => Gain adcThru => mixer; // Monitor the input
-adc => LiSa sample => mixer;  // Sampler
 // TODO: turn off adcThru when recording
-
-//Times
-10::second => sample.duration;
-0::second => sample.recPos => sample.playPos;
-1::second => sample.loopEnd => sample.loopEndRec;
+// Effects chain
+adc => Gain adcThru => Gain mixer => dac; // Monitor input through a mixer
+SampleChan channel1;
 
 // Levels
 //0 => adc.gain;
 .5 => adcThru.gain;
 
 // Start recording and playing in a loop
-1 => sample.loop => sample.record => sample.play; 
+channel1.outputTo(mixer);
+channel1.recordFrom(adc);
 
 // Listen to OSC messages
 OscIn oin; 9000 => oin.port; 
@@ -35,17 +30,57 @@ while (true) {
     } 
 }
 
+
 fun void controlInput(OscMsg msg){
     msg.getFloat(0) => adc.gain;
     msg.getFloat(1) => adcThru.gain;
 }
 
 fun void controlDelay(OscMsg msg){
-    msg.getFloat(0)::second => sample.loopEnd => sample.loopEndRec;
-    msg.getFloat(1) => sample.feedback;
+    channel1.setLoopPoint(msg.getFloat(0)::second);
+    channel1.setFeedback(msg.getFloat(1));
 }
 
 fun void controlChannel(OscMsg msg){
     msg.getInt(0) => int channel;
-    msg.getFloat(1) => sample.gain;
+    channel1.setGain(msg.getFloat(1));
 }
+
+
+public class SampleChan
+{
+    // Chain
+    LiSa sample => LPF filter;
+
+    // Setup
+    UGen @ mySource;
+    10::second => sample.duration; //This is the max duration
+    0::second => sample.recPos => sample.playPos;
+    1.0 => sample.feedback;
+    1 => sample.loop;
+    1 => filter.Q;
+    setLoopPoint(1::second);
+    setFilter(1000);
+
+    public void setLoopPoint( dur length ) { length => sample.loopEnd => sample.loopEndRec; }
+    public void setFeedback( float fb ) { fb => sample.feedback; }
+    public void setFilter( float freq ) { freq => filter.freq; }
+    public void setGain( float gain ) { gain => filter.gain; }
+
+    public void outputTo(UGen ugen) { 
+        1 => sample.play; 
+        filter => ugen; 
+    }
+
+    public void recordFrom(UGen ugen) {
+        1 => sample.record;
+        ugen => sample;
+        ugen @=> mySource;
+    }
+
+    public void stopRecording() {
+        0 => sample.record;
+        mySource =< sample; 
+    }
+}
+
