@@ -11,8 +11,6 @@ adc => LiSa sample => mixer;  // Sampler
 
 // Levels
 //0 => adc.gain;
-1 => sample.feedback;
-.5 => sample.gain;
 .5 => adcThru.gain;
 
 // Start recording and playing in a loop

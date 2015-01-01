@@ -1,27 +1,48 @@
+public class SampleChan
+{
+    // Chain
+    LiSa sample => LPF filter;
+
+    // Setup
+    UGen @ mySource;
+    10::second => sample.duration; //This is the max duration
+    0::second => sample.recPos => sample.playPos;
+    1.0 => sample.feedback;
+    1 => sample.loop;
+    setLoopPoint(1::second);
+    filter.set(10000, 1);
+
+    public void setLoopPoint( dur length ) {
+        length => sample.loopEnd => sample.loopEndRec;
+    }
+
+    public void outputTo(UGen ugen) { 
+        1 => sample.play; 
+        filter => ugen; 
+    }
+
+    public void recordFrom(UGen ugen) {
+        1 => sample.record;
+        ugen => sample;
+        ugen @=> mySource;
+    }
+
+    public void stopRecording() {
+        0 => sample.record;
+        mySource =< sample; 
+    }
+}
+
 // Effects chain
-Gain mixer => dac;            // Main mixer
-adc => Gain adcThru => mixer; // Monitor the input
-adc => LiSa sample => mixer;  // Sampler
-// TODO: turn off adcThru when recording
+Gain mixer => dac;              // Main mixer
+//adc => Gain adcThru => mixer; // Monitor the input
+SampleChan sample;              // Sampler
 
-//Times
-10::second => sample.duration;
-0::second => sample.recPos;
-0::second => sample.playPos;
-1::second => sample.loopEnd => sample.loopEndRec;
+sample.outputTo(mixer);
+sample.recordFrom(adc);
 
-// Start recording and playing in a loop
-1 => sample.loop => sample.record => sample.play; 
+2::second => now;
+sample.stopRecording();
+5::second=>now;
 
-// Levels
-//0 => adc.gain;
-1 => sample.feedback;
-.5 => sample.gain;
-.5 => adcThru.gain;
-
-.5::second => now;
-2::second => sample.loopEnd => sample.loopEndRec;
-
-
-
-while(true) { 1::second => now; }
+/*while(true) { 1::second => now; }*/
