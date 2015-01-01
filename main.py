@@ -137,7 +137,6 @@ class Channel(wx.Panel):
         self.update()
 
     def update(self, evt=None):
-        print "Channel %d: send gain, pan, mute" % self.index
         gain=self.gain.GetValue()/100.
         if self.mute.GetValue(): gain=0.0;
         try:
@@ -173,8 +172,10 @@ class Mixer(wx.Panel):
             c.record.SetValue(0)
         self.channels[index].record.SetValue(value)
         if value:
+            sendOSCMsg("/arm", [index])
             print "Record on channel %d"  % index
         else:
+            sendOSCMsg("/arm", [-1])
             print "Stop recording on all channels"
 
     def clear_channel(self, evt):
