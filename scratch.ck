@@ -1,29 +1,27 @@
-//signal chain; record a sine wave, play it back
-adc => LiSa saveme => dac;
-adc => dac; //monitor the input
-0.5 => adc.gain;
+// Effects chain
+Gain mixer => dac;            // Main mixer
+adc => Gain adcThru => mixer; // Monitor the input
+adc => LiSa sample => mixer;  // Sampler
+// TODO: turn off adcThru when recording
 
-//alloc memory; required
-2::second => saveme.duration;
+//Times
+10::second => sample.duration;
+0::second => sample.recPos;
+0::second => sample.playPos;
+1::second => sample.loopEnd => sample.loopEndRec;
 
-//start recording input
-1 => saveme.loop;
-0::second => saveme.playPos;
-2::second => saveme.recPos;
-2::second => saveme.loopEnd;
+// Start recording and playing in a loop
+1 => sample.loop => sample.record => sample.play; 
 
-// Start recording, wait one second, then start playing
-1 => saveme.record;
-1 => saveme.play;
-1 => saveme.feedback;
+// Levels
+//0 => adc.gain;
+1 => sample.feedback;
+.5 => sample.gain;
+.5 => adcThru.gain;
 
-while(true)
-{
-    1::second => now;
-}
-
-
+.5::second => now;
+2::second => sample.loopEnd => sample.loopEndRec;
 
 
 
-
+while(true) { 1::second => now; }

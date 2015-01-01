@@ -6,11 +6,8 @@ adc => LiSa sample => mixer;  // Sampler
 
 //Times
 10::second => sample.duration;
-0::second => sample.recPos;
-1::second => sample.playPos => sample.loopEnd => sample.loopEndRec;
-
-// Start recording and playing in a loop
-1 => sample.loop => sample.record => sample.play; 
+0::second => sample.recPos => sample.playPos;
+1::second => sample.loopEnd => sample.loopEndRec;
 
 // Levels
 //0 => adc.gain;
@@ -18,60 +15,39 @@ adc => LiSa sample => mixer;  // Sampler
 .5 => sample.gain;
 .5 => adcThru.gain;
 
-// OSC listener class
-class OSCListener {
-    fun void run(int port, string address) {
-        OscRecv recv; port => recv.port; recv.listen(); 
-        recv.event(address) @=> OscEvent oe;
-        while (true) { oe => now; while (oe.nextMsg() != 0) { this.handle(oe); } }
-        me.yield();
-    }
-    fun void handle(OscEvent oe){};
+// Start recording and playing in a loop
+1 => sample.loop => sample.record => sample.play; 
+
+// Listen to OSC messages
+OscIn oin; 9000 => oin.port; 
+oin.listenAll(); 
+OscMsg msg;
+
+// Event loop
+while (true) { 
+    oin => now; 
+    while (oin.recv(msg)) { 
+        <<<msg.address>>>;
+        if (msg.address=="/input")
+            controlInput(msg);
+        else if(msg.address=="/delay")
+            controlDelay(msg);
+        else if(msg.address=="/channel")
+            controlChannel(msg);
+    } 
 }
 
-// define child class Y
-class InputListener extends OSCListener {
-    fun void handle(OscEvent oe){
-        oe.getFloat() => adc.gain;
-        oe.getFloat() => adcThru.gain;
-        <<< "Edit input" >>>;
-    }
+fun void controlInput(OscMsg msg){
+    msg.getFloat(0) => adc.gain;
+    msg.getFloat(1) => adcThru.gain;
 }
 
-// define child class Y
-class DelayListener extends OSCListener
-{
-    fun void handle(OscEvent oe){
-        //TODO: this doesn't work
-        // oe.getFloat()::second => sample.recPos => sample.loopEnd => sample.loopEndRec;
-        //oe.getFloat()::second => sample.playPos => sample.loopEnd => sample.loopEndRec;
-        oe.getFloat();
-        oe.getFloat() => sample.feedback;
-        <<< "Edit delay" >>>;
-    }
+fun void controlDelay(OscMsg msg){
+    msg.getFloat(0)::second => sample.loopEnd => sample.loopEndRec;
+    msg.getFloat(1) => sample.feedback;
 }
 
-// define child class Y
-class ChannelListener extends OSCListener
-{
-    fun void handle(OscEvent oe){
-        oe.getInt() => int channel;
-        oe.getFloat();
-        oe.getFloat();
-        <<< "Edit channel"  >>>;
-    }
+fun void controlChannel(OscMsg msg){
+    msg.getInt(0) => int channel;
+    msg.getFloat(1) => sample.gain;
 }
-
-
-InputListener il;
-DelayListener dl;
-ChannelListener cl;
-spork ~ il.run(9000, "/input, f, f");
-spork ~ dl.run(9000, "/delay, f, f");
-spork ~ cl.run(9000, "/channel, i, f, f");
-
-// Loop forever
-while(true) { 1::second => now; }
-
-
-
