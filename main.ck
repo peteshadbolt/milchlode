@@ -17,8 +17,8 @@ OscMsg msg;
 
 // Event loop
 while (true) { 
-    //oin => now; 
-    1::second => now;
+    oin => now; 
+    //1::second => now;
     while (oin.recv(msg)) { 
         if (msg.address=="/input") 
         {
@@ -38,11 +38,17 @@ while (true) {
         {
             msg.getInt(0) => int i;
             channels[i].setGain(msg.getFloat(1));
+            channels[i].setPan(msg.getFloat(2));
         }
         else if(msg.address=="/arm")
         {
             msg.getInt(0) => int channel;
             for( 0 => int i; i < channels.cap(); i++ ) { channels[i].arm(i==channel); }
+        }
+        else if(msg.address=="/clear")
+        {
+            msg.getInt(0) => int channel;
+            channels[channel].clear();
         }
     } 
 }
@@ -53,7 +59,7 @@ public class SampleChan
     adc => LiSa sample => LPF filter;
 
     // Setup
-    10::second => sample.duration; //This is the max duration
+    10::second => sample.duration;  //This is the max duration
     0::second => sample.recPos => sample.playPos;
     1.0 => sample.feedback;
     1 => sample.loop;
@@ -65,6 +71,8 @@ public class SampleChan
     public void setFeedback( float fb ) { fb => sample.feedback; }
     public void setFilter( float freq ) { freq => filter.freq; }
     public void setGain( float gain ) { gain => filter.gain; }
+    public void setPan( float pan ) { }
+    public void clear() { sample.clear(); }
 
     public void outputTo(UGen ugen) { 
         1 => sample.play; 
@@ -72,6 +80,7 @@ public class SampleChan
     }
 
     public void arm(int value) {
+        sample.playPos() => sample.recPos;
         value => sample.record;
     }
 }

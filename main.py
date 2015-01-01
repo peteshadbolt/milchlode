@@ -1,6 +1,12 @@
 from libs.simpleosc import *
 import wx
 
+def sendOSCSave(channel, data):
+    try:
+        sendOSCMsg(channel, data)
+    except OSCClientError:
+        print "OSC comms error"
+
 class OSCSlider(wx.Panel):
     ''' A GUI slider '''
     def __init__(self, parent, label, min_value=0, max_value=1, default_value=0, align=True):
@@ -71,10 +77,7 @@ class InputPanel(wx.Panel):
         gain=self.gain.slider.GetValue()/100.
         thru=self.thru.slider.GetValue()/100.
         if self.mute.GetValue(): gain, thru = 0.,0.
-        try:
-            sendOSCMsg("/input", [gain, thru])
-        except OSCClientError:
-            pass
+        sendOSCMsg("/input", [gain, thru])
 
 class DelayPanel(wx.Panel):
     ''' Handle the ADC input settings '''
@@ -105,10 +108,7 @@ class DelayPanel(wx.Panel):
         """ Send OSC messages """
         a=self.delayTime.slider.GetValue()/100.
         b=self.feedback.slider.GetValue()/100.
-        try:
-            sendOSCMsg("/delay", [a, b])
-        except OSCClientError:
-            pass
+        sendOSCMsg("/delay", [a, b])
 
 class Channel(wx.Panel):
     """ A single channel """
@@ -123,6 +123,10 @@ class Channel(wx.Panel):
 
         self.gain = OSCSlider(self, "Gain", default_value=1, max_value=1.3, align=False)
         sizer.Add(self.gain, 0, wx.ALL|wx.EXPAND, 3)
+
+        self.pan = OSCSlider(self, "Pan", default_value=0, min_value=-1, max_value=1, align=False)
+        sizer.Add(self.pan, 0, wx.ALL|wx.EXPAND, 3)
+
         self.record = wx.ToggleButton(self, 1, "Arm")
         sizer.Add(self.record, 0, wx.ALL|wx.EXPAND if index==0 else wx.ALL|wx.EXPAND, 3)
 
@@ -133,16 +137,15 @@ class Channel(wx.Panel):
         self.SetSizerAndFit(sizer)
 
         self.gain.Bind(wx.EVT_SCROLL, self.update)
+        self.pan.Bind(wx.EVT_SCROLL, self.update)
         self.mute.Bind(wx.EVT_TOGGLEBUTTON, self.update)
         self.update()
 
     def update(self, evt=None):
         gain=self.gain.GetValue()/100.
+        pan=self.pan.GetValue()/100.
         if self.mute.GetValue(): gain=0.0;
-        try:
-            sendOSCMsg("/channel", [self.index, gain])
-        except OSCClientError:
-            pass
+        sendOSCMsg("/channel", [self.index, gain, pan])
 
 
 class Mixer(wx.Panel):
@@ -171,17 +174,12 @@ class Mixer(wx.Panel):
         for i, c in enumerate(self.channels):
             c.record.SetValue(0)
         self.channels[index].record.SetValue(value)
-        if value:
-            sendOSCMsg("/arm", [index])
-            print "Record on channel %d"  % index
-        else:
-            sendOSCMsg("/arm", [-1])
-            print "Stop recording on all channels"
+        sendOSCMsg("/arm", [index if value else -1])
 
     def clear_channel(self, evt):
         """ Send OSC message to clear a channel """
         index = evt.GetEventObject().index
-        print "Clear channel %d"  % index
+        sendOSCMsg("/clear", [index])
 
 
 
