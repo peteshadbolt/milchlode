@@ -20,7 +20,7 @@ OscMsg msg;
 
 // Start the metronome
 0 => int metronomeLevel;
-spork ~plip();
+//spork ~plip();
 
 // Event loop
 while (true) { 
