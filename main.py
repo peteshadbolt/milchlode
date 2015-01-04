@@ -44,7 +44,6 @@ class CommsPanel(wx.Panel):
         self.SetSizerAndFit(sizer)
 
 
-
 class InputPanel(wx.Panel):
     ''' Handle the ADC input settings '''
     def __init__(self, parent):
