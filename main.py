@@ -1,7 +1,7 @@
 from libs.simpleosc import *
 import wx
 
-def sendOSCSave(channel, data):
+def sendOSCSafe(channel, data):
     try:
         sendOSCMsg(channel, data)
     except OSCClientError:
@@ -20,7 +20,6 @@ class OSCSlider(wx.Panel):
         self.SetSizerAndFit(sizer)
         self.Bind=self.slider.Bind
         self.GetValue=self.slider.GetValue
-
 
 class CommsPanel(wx.Panel):
     """ OSC comms """
@@ -77,7 +76,7 @@ class InputPanel(wx.Panel):
         gain=self.gain.slider.GetValue()/100.
         thru=self.thru.slider.GetValue()/100.
         if self.mute.GetValue(): gain, thru = 0.,0.
-        sendOSCMsg("/input", [gain, thru])
+        sendOSCSafe("/input", [gain, thru])
 
 class DelayPanel(wx.Panel):
     ''' Handle the ADC input settings '''
@@ -109,11 +108,11 @@ class DelayPanel(wx.Panel):
         """ Send OSC messages """
         a=self.delayTime.slider.GetValue()/100.
         b=self.feedback.slider.GetValue()/100.
-        sendOSCMsg("/delay", [a, b])
+        sendOSCSafe("/delay", [a, b])
 
     def switchMetronome(self, evt):
         """ Send OSC messages """
-        sendOSCMsg("/metronome", [int(self.metronome.GetValue())])
+        sendOSCSafe("/metronome", [int(self.metronome.GetValue())])
 
 class Channel(wx.Panel):
     """ A single channel """
@@ -132,6 +131,9 @@ class Channel(wx.Panel):
         self.pan = OSCSlider(self, "Pan", default_value=0, min_value=-1, max_value=1, align=False)
         sizer.Add(self.pan, 0, wx.ALL|wx.EXPAND, 3)
 
+        self.fxsend = OSCSlider(self, "Dry/Wet", default_value=0, min_value=0, max_value=1, align=False)
+        sizer.Add(self.fxsend, 0, wx.ALL|wx.EXPAND, 3)
+
         self.record = wx.ToggleButton(self, 1, "Arm")
         sizer.Add(self.record, 0, wx.ALL|wx.EXPAND if index==0 else wx.ALL|wx.EXPAND, 3)
 
@@ -139,6 +141,12 @@ class Channel(wx.Panel):
         sizer.Add(self.mute, 0, wx.ALL|wx.EXPAND, 3)
         self.clear = wx.Button(self, 1, "Clear")
         sizer.Add(self.clear, 0, wx.ALL|wx.EXPAND, 3)
+
+        choices=["1 bar", "2 bars", "4 bars", "Dephase"]
+        self.speed= wx.ComboBox(self, choices=choices, style=wx.CB_READONLY, size=(25,25))
+        self.speed.SetValue("1 bar")
+        sizer.Add(self.speed, 0, wx.ALL|wx.EXPAND, 3)
+
         self.SetSizerAndFit(sizer)
 
         self.gain.Bind(wx.EVT_SCROLL, self.update)
@@ -150,7 +158,7 @@ class Channel(wx.Panel):
         gain=self.gain.GetValue()/100.
         pan=self.pan.GetValue()/100.
         if self.mute.GetValue(): gain=0.0;
-        sendOSCMsg("/channel", [self.index, gain, pan])
+        sendOSCSafe("/channel", [self.index, gain, pan])
 
 
 class Mixer(wx.Panel):
@@ -179,13 +187,42 @@ class Mixer(wx.Panel):
         for i, c in enumerate(self.channels):
             c.record.SetValue(0)
         self.channels[index].record.SetValue(value)
-        sendOSCMsg("/arm", [index if value else -1])
+        sendOSCSafe("/arm", [index if value else -1])
 
     def clear_channel(self, evt):
         """ Send OSC message to clear a channel """
         index = evt.GetEventObject().index
-        sendOSCMsg("/clear", [index])
+        sendOSCSafe("/clear", [index])
 
+class FXPanel(wx.Panel):
+    ''' Effects chain '''
+    def __init__(self, parent):
+        ''' Constructor '''
+        wx.Panel.__init__(self, parent)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        label = wx.StaticText(self, label="FX:")
+        font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
+        sizer.Add(label, 0, wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
+
+        choices=["Low pass filter", "High pass filter", "Reverb"]
+        self.fxtype= wx.ComboBox(self, choices=choices, style=wx.CB_READONLY, size=(25,25))
+        sizer.Add(self.fxtype, 0, wx.ALL|wx.EXPAND, 5)
+        self.fxtype.SetValue(choices[0])
+
+        self.delayTime=OSCSlider(self, "Strength", default_value=0)
+        sizer.Add(self.delayTime, 0, wx.EXPAND|wx.ALL, 5)
+
+        self.SetSizerAndFit(sizer)
+        #self.update(None)
+
+    """
+    def update(self, evt):
+        # Send OSC messages 
+        a=self.delayTime.slider.GetValue()/100.
+        b=self.feedback.slider.GetValue()/100.
+        sendOSCSafe("/delay", [a, b])
+    """
 
 
 class MainGUI(wx.Frame):
@@ -222,6 +259,11 @@ class MainGUI(wx.Frame):
 
         self.mixer = Mixer(self)
         self.mainsizer.Add(self.mixer, 1, wx.EXPAND|wx.ALL, 5)
+
+        line=wx.StaticLine(self); self.mainsizer.Add(line, 0, wx.EXPAND|wx.ALL, 1)
+
+        self.fx = FXPanel(self)
+        self.mainsizer.Add(self.fx, 0, wx.EXPAND|wx.ALL, 5)
 
         # Put things together
         self.SetSizerAndFit(self.mainsizer)
