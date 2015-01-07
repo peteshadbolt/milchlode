@@ -163,14 +163,16 @@ class Channel(wx.Panel):
 
         self.gain.Bind(wx.EVT_SCROLL, self.update)
         self.pan.Bind(wx.EVT_SCROLL, self.update)
+        self.fxsend.Bind(wx.EVT_SCROLL, self.update)
         self.mute.Bind(wx.EVT_TOGGLEBUTTON, self.update)
         self.update()
 
     def update(self, evt=None):
         gain=self.gain.GetValue()/100.
         pan=self.pan.GetValue()/100.
+        fxsend=self.fxsend.GetValue()/100.
         if self.mute.GetValue(): gain=0.0;
-        sendOSCSafe("/channel", [self.index, gain, pan])
+        sendOSCSafe("/channel", [self.index, gain, pan, fxsend])
 
 
 class Mixer(wx.Panel):
@@ -213,28 +215,30 @@ class FXPanel(wx.Panel):
         wx.Panel.__init__(self, parent)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        label = wx.StaticText(self, label="FX:")
+        label = wx.StaticText(self, label="Filter:")
         font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
         sizer.Add(label, 0, wx.EXPAND|wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
-        choices=["Low pass filter", "High pass filter", "Reverb"]
-        self.fxtype= wx.ComboBox(self, choices=choices, style=wx.CB_READONLY, size=(25,25))
-        sizer.Add(self.fxtype, 1, wx.ALL|wx.EXPAND, 5)
-        self.fxtype.SetValue(choices[0])
+        #choices=["Low pass filter", "High pass filter", "Reverb"]
+        #self.fxtype= wx.ComboBox(self, choices=choices, style=wx.CB_READONLY, size=(25,25))
+        #sizer.Add(self.fxtype, 1, wx.ALL|wx.EXPAND, 5)
+        #self.fxtype.SetValue(choices[0])
 
-        self.fxStrength=OSCSlider(self, "", default_value=0, align=False)
-        sizer.Add(self.fxStrength, 2, wx.EXPAND|wx.ALL, 5)
+        self.lpf=OSCSlider(self, "Lowpass", default_value=0)
+        sizer.Add(self.lpf, 2, wx.EXPAND|wx.ALL, 5)
+        self.lpf.Bind(wx.EVT_SCROLL, self.update)
+
+        self.reverb=OSCSlider(self, "Reverb", default_value=0)
+        sizer.Add(self.reverb, 2, wx.EXPAND|wx.ALL, 5)
+        self.reverb.Bind(wx.EVT_SCROLL, self.update)
 
         self.SetSizerAndFit(sizer)
-        #self.update(None)
+        self.update(None)
 
-    """
     def update(self, evt):
-        # Send OSC messages 
-        a=self.delayTime.slider.GetValue()/100.
-        b=self.feedback.slider.GetValue()/100.
-        sendOSCSafe("/delay", [a, b])
-    """
+        a=self.lpf.slider.GetValue()/100.
+        b=self.reverb.slider.GetValue()/100.
+        sendOSCSafe("/fx", [a,b])
 
 class OutputPanel(wx.Panel):
     ''' Handle the ADC input settings '''

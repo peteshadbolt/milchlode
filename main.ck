@@ -1,31 +1,33 @@
 // TODO: turn off adcThru when recording
-// Effects chain
-adc => Dyno limitIn => Gain adcThru => dac; // Monitor input through a mixer
-// Global effects break panning for some unknown reason
-Dyno limitOut => PRCRev rev => dac;
-.3 => rev.mix;
-limitIn.limit(); limitOut.limit();
-SampleChan channels[4];
+// TODO: Effects break panning for some unknown reason
 
-// Levels
-//0 => adc.gain;
+// Capture mic/line in and monitor through DAC. Limit
+adc => Dyno inputLimiter => Gain adcThru => dac; // Monitor input 
+inputLimiter.limit(); 
+inputLimiter @=> UGen @ mainInput;
+
+// Effects chain with limiters, reverb, filters
+PRCRev reverb => LPF lpf => Dyno outputLimiter => dac;
+outputLimiter.limit();
+reverb @=> UGen @ outputWet; // Reference to wet output
+outputLimiter @=> UGen @ outputDry; // Reference to dry output
+
+// Default parameters
 .5 => adcThru.gain;
-
-// Global loop time
+10000 => lpf.freq;
 1::second => dur loopTime;
 
-// Each channel should output to the mixer
-for( 0 => int i; i < channels.cap(); i++ ) { channels[i].outputTo(limitOut); }
+// Plug in the pedals
+LoopPedal pedals[4];
+for( 0 => int i; i < pedals.cap(); i++ ) { 
+    pedals[i].recordFrom(mainInput);  
+    pedals[i].outputTo(outputWet, outputDry); 
+}
 
-// Listen to OSC messages
+// Start listening to OSC messages
 OscIn oin; 9000 => oin.port; 
 oin.listenAll(); 
 OscMsg msg;
-
-// Start the metronome
-0 => int metronomeLevel;
-//spork ~metronome();
-//spork ~vu_meter();
 
 // Event loop
 while (true) { 
@@ -38,51 +40,62 @@ while (true) {
         else if(msg.address=="/delay") {
             msg.getFloat(0)::second => loopTime;
             msg.getFloat(1) => float feedback;
-            for( 0 => int i; i < channels.cap(); i++ ) { 
-                channels[i].setLoopPoint(loopTime); 
-                channels[i].setFeedback(feedback);
+            for( 0 => int i; i < pedals.cap(); i++ ) { 
+                pedals[i].setLoopPoint(loopTime); 
+                pedals[i].setFeedback(feedback);
             }
          }
         else if(msg.address=="/channel") {
             msg.getInt(0) => int i;
-            channels[i].setGain(msg.getFloat(1));
-            channels[i].setPan(msg.getFloat(2));
+            pedals[i].setGain(msg.getFloat(1));
+            pedals[i].setPan(msg.getFloat(2));
+            pedals[i].setWet(msg.getFloat(3));
         }
         else if(msg.address=="/arm") {
             msg.getInt(0) => int channel;
-            for( 0 => int i; i < channels.cap(); i++ ) { channels[i].arm(i==channel); }
+            for( 0 => int i; i < pedals.cap(); i++ ) { pedals[i].arm(i==channel); }
         }
         else if(msg.address=="/metronome") {
-            msg.getInt(0) => metronomeLevel;
+            //msg.getInt(0) => metronomeLevel;
         }
         else if(msg.address=="/clear") {
             msg.getInt(0) => int channel;
-            channels[channel].clear();
+            pedals[channel].clear();
+        }
+        else if(msg.address=="/fx") {
+            (100+msg.getFloat(0)*10000) => lpf.freq;
+            msg.getFloat(0) => reverb.mix;
         }
     } 
 }
 
-public class SampleChan
+public class LoopPedal
 {
-    // Chain
-    adc => LiSa sample => Pan2 panner;
+    // We are wrapping a live sampler, LiSa
+    LiSa sample;
+    sample => Gain wet;
+    sample => Gain dry;
 
     // Setup
-    10::second => sample.duration;  //This is the max duration
+    10::second => sample.duration;  // Allocate max 10 secs of memory
     0::second => sample.recPos => sample.playPos;
     1.0 => sample.feedback;
     1 => sample.loop;
     setLoopPoint(1::second);
+    setWet(0.5);
 
     public void setLoopPoint( dur length ) { length => sample.loopEnd => sample.loopEndRec; }
     public void setFeedback( float fb ) { fb => sample.feedback; }
-    public void setGain( float gain ) { gain => panner.gain; }
-    public void setPan( float pan ) { pan => panner.pan; }
+    public void setGain( float gain ) { gain => sample.gain; }
+    public void setPan( float pan ) { } //pan => panner.pan; }
+    public void setWet( float ratio ) { ratio => wet.gain; 1-ratio => dry.gain;} 
     public void clear() { sample.clear(); }
+    public void recordFrom(UGen ugen) { ugen => sample; }
 
-    public void outputTo(UGen ugen) { 
+    public void outputTo(UGen wetSink, UGen drySink) { 
         1 => sample.play; 
-        panner => ugen; 
+        wet => wetSink; 
+        dry => drySink; 
     }
 
     public void arm(int value) {
@@ -90,6 +103,24 @@ public class SampleChan
         value => sample.record;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+// Start the metronome and the vu meter (optional)
+//0 => int metronomeLevel;
+//spork ~plip();
+//spork ~vu_meter();
 
 fun void vu_meter()
 {
@@ -114,6 +145,7 @@ fun void vu_meter()
 }
 
 
+
 // TODO timing here should be done using events
 fun void metronome()
 {
@@ -131,3 +163,4 @@ fun void metronome()
     }
 
 }
+*/
