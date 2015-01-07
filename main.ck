@@ -2,8 +2,8 @@
 // Effects chain
 adc => Dyno limitIn => Gain adcThru => dac; // Monitor input through a mixer
 // Global effects break panning for some unknown reason
-/*Dyno limitOut => JCRev rev => dac;*/
-/*Dyno limitOut => JCRev rev => dac;*/
+Dyno limitOut => PRCRev rev => dac;
+.3 => rev.mix;
 limitIn.limit(); limitOut.limit();
 SampleChan channels[4];
 
@@ -24,7 +24,7 @@ OscMsg msg;
 
 // Start the metronome
 0 => int metronomeLevel;
-//spork ~plip();
+//spork ~metronome();
 //spork ~vu_meter();
 
 // Event loop
@@ -115,7 +115,7 @@ fun void vu_meter()
 
 
 // TODO timing here should be done using events
-fun void plip()
+fun void metronome()
 {
     SinOsc s => dac;
     0.01::second => dur plipTime;
