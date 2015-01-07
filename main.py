@@ -1,6 +1,9 @@
 from libs.simpleosc import *
 import wx
 
+#TODO: standardize methods for adding/removing arrays of widgets
+#TODO: fix the *100 / /100 stuff
+
 def sendOSCSafe(channel, data):
     try:
         sendOSCMsg(channel, data)
@@ -91,13 +94,13 @@ class DelayPanel(wx.Panel):
         sizer.Add(label, 0, wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
         self.delayTime=OSCSlider(self, "Time", default_value=1, max_value=10, align=False)
-        sizer.Add(self.delayTime, 1, wx.EXPAND|wx.ALL, 5)
+        sizer.Add(self.delayTime, 1, wx.ALL, 5)
 
         self.feedback=OSCSlider(self, "Hold", default_value=.99, align=False)
-        sizer.Add(self.feedback, 1, wx.EXPAND|wx.ALL, 5)
+        sizer.Add(self.feedback, 1, wx.ALL, 5)
 
-        self.metronome=wx.ToggleButton(self, 0, "Click")
-        sizer.Add(self.metronome, 0, wx.EXPAND|wx.ALL, 5)
+        self.metronome=wx.ToggleButton(self, 0, "Metronome")
+        sizer.Add(self.metronome, 0)
 
         self.SetSizerAndFit(sizer)
         self.delayTime.Bind(wx.EVT_SCROLL, self.update)
@@ -215,7 +218,7 @@ class FXPanel(wx.Panel):
         wx.Panel.__init__(self, parent)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        label = wx.StaticText(self, label="Filter:")
+        label = wx.StaticText(self, label="FX:")
         font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
         sizer.Add(label, 0, wx.EXPAND|wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
@@ -224,11 +227,11 @@ class FXPanel(wx.Panel):
         #sizer.Add(self.fxtype, 1, wx.ALL|wx.EXPAND, 5)
         #self.fxtype.SetValue(choices[0])
 
-        self.lpf=OSCSlider(self, "Lowpass", default_value=0)
+        self.lpf=OSCSlider(self, "Lowpass", default_value=.5, align=False)
         sizer.Add(self.lpf, 2, wx.EXPAND|wx.ALL, 5)
         self.lpf.Bind(wx.EVT_SCROLL, self.update)
 
-        self.reverb=OSCSlider(self, "Reverb", default_value=0)
+        self.reverb=OSCSlider(self, "Reverb", default_value=.5, align=False)
         sizer.Add(self.reverb, 2, wx.EXPAND|wx.ALL, 5)
         self.reverb.Bind(wx.EVT_SCROLL, self.update)
 
@@ -253,18 +256,16 @@ class OutputPanel(wx.Panel):
 
         self.level=OSCSlider(self, "Level", default_value=.8, align=False)
         sizer.Add(self.level, 2, wx.EXPAND|wx.ALL, 5)
+        self.level.Bind(wx.EVT_SCROLL, self.update)
 
-        self.gauge = wx.Gauge(self, size=(40,10))
-        sizer.Add(self.gauge, 1, wx.EXPAND|wx.ALL, 5)
+        #self.gauge = wx.Gauge(self, size=(40,10))
+        #sizer.Add(self.gauge, 1, wx.EXPAND|wx.ALL, 5)
 
         self.SetSizerAndFit(sizer)
 
-    """
     def update(self, evt):
-        a=self.delayTime.slider.GetValue()/100.
-        b=self.feedback.slider.GetValue()/100.
-        sendOSCSafe("/delay", [a, b])
-    """
+        a=self.level.slider.GetValue()/100.
+        sendOSCSafe("/master", [a])
 
 
 class MainGUI(wx.Frame):

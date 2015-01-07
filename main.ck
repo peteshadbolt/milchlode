@@ -1,16 +1,19 @@
 // TODO: turn off adcThru when recording
 // TODO: Effects break panning for some unknown reason
-
-// Capture mic/line in and monitor through DAC. Limit
-adc => Dyno inputLimiter => Gain adcThru => dac; // Monitor input 
-inputLimiter.limit(); 
-inputLimiter @=> UGen @ mainInput;
+// TODO: currently I don't turn ADC thru back on after recording
 
 // Effects chain with limiters, reverb, filters
-PRCRev reverb => LPF lpf => Dyno outputLimiter => dac;
+NRev reverb => LPF lpf => Dyno outputLimiter => dac;
 outputLimiter.limit();
 reverb @=> UGen @ outputWet; // Reference to wet output
 outputLimiter @=> UGen @ outputDry; // Reference to dry output
+outputLimiter @=> UGen @ mainOutput; // Reference to main output
+
+// Capture mic/line in and monitor through DAC. Limit
+adc => Dyno inputLimiter => Gain adcThru => mainOutput; // Monitor input 
+inputLimiter.limit(); 
+inputLimiter @=> UGen @ mainInput;
+
 
 // Default parameters
 .5 => adcThru.gain;
@@ -64,7 +67,10 @@ while (true) {
         }
         else if(msg.address=="/fx") {
             (100+msg.getFloat(0)*10000) => lpf.freq;
-            msg.getFloat(0) => reverb.mix;
+            msg.getFloat(1) => reverb.mix;
+        }
+        else if(msg.address=="/master") {
+            msg.getFloat(0) => mainOutput.gain;
         }
     } 
 }
@@ -99,6 +105,7 @@ public class LoopPedal
     }
 
     public void arm(int value) {
+        0 => adcThru.gain;
         sample.playPos() => sample.recPos;
         value => sample.record;
     }
