@@ -3,7 +3,7 @@
 // TODO: currently I don't turn ADC thru back on after recording
 
 // Effects chain with limiters, reverb, filters
-NRev reverb => LPF lpf => Dyno outputLimiter => dac;
+NRev reverb => LPF lpf => HPF hpf => Dyno outputLimiter => dac;
 outputLimiter.limit();
 reverb @=> UGen @ outputWet; // Reference to wet output
 outputLimiter @=> UGen @ outputDry; // Reference to dry output
@@ -18,6 +18,7 @@ inputLimiter @=> UGen @ mainInput;
 // Default parameters
 .5 => adcThru.gain;
 10000 => lpf.freq;
+10 => hpf.freq;
 1::second => dur loopTime;
 
 // Plug in the pedals
@@ -67,7 +68,8 @@ while (true) {
         }
         else if(msg.address=="/fx") {
             (100+msg.getFloat(0)*10000) => lpf.freq;
-            msg.getFloat(1) => reverb.mix;
+            (100+msg.getFloat(1)*10000) => hpf.freq;
+            msg.getFloat(2) => reverb.mix;
         }
         else if(msg.address=="/master") {
             msg.getFloat(0) => mainOutput.gain;

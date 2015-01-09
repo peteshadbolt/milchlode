@@ -227,9 +227,13 @@ class FXPanel(wx.Panel):
         #sizer.Add(self.fxtype, 1, wx.ALL|wx.EXPAND, 5)
         #self.fxtype.SetValue(choices[0])
 
-        self.lpf=OSCSlider(self, "Lowpass", default_value=.5, align=False)
+        self.lpf=OSCSlider(self, "Lo-pass", default_value=.5, align=False)
         sizer.Add(self.lpf, 2, wx.EXPAND|wx.ALL, 5)
         self.lpf.Bind(wx.EVT_SCROLL, self.update)
+
+        self.hpf=OSCSlider(self, "Hi-pass", min_value=0.1, default_value=.5, align=False)
+        sizer.Add(self.hpf, 2, wx.EXPAND|wx.ALL, 5)
+        self.hpf.Bind(wx.EVT_SCROLL, self.update)
 
         self.reverb=OSCSlider(self, "Reverb", default_value=.5, align=False)
         sizer.Add(self.reverb, 2, wx.EXPAND|wx.ALL, 5)
@@ -240,8 +244,9 @@ class FXPanel(wx.Panel):
 
     def update(self, evt):
         a=self.lpf.slider.GetValue()/100.
+        a2=self.hpf.slider.GetValue()/100.
         b=self.reverb.slider.GetValue()/100.
-        sendOSCSafe("/fx", [a,b])
+        sendOSCSafe("/fx", [a,a2,b])
 
 class OutputPanel(wx.Panel):
     ''' Handle the ADC input settings '''
