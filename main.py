@@ -19,7 +19,9 @@ class OSCSlider(wx.Panel):
         sizer.Add(self.slider, 1, wx.EXPAND)
         self.SetSizerAndFit(sizer)
         self.Bind=self.slider.Bind
-        self.GetValue=self.slider.GetValue
+
+    def GetValue(self):
+        return self.slider.GetValue()/100.
 
 class CommsPanel(wx.Panel):
     """ OSC comms """
@@ -30,7 +32,6 @@ class CommsPanel(wx.Panel):
         label = wx.StaticText(self, label="Sync:")
         font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
         sizer.Add(label, 0, wx.TOP|wx.BOTTOM|wx.RIGHT|wx.EXPAND, 5)
-
 
         choices=["Master", "Minion"]
         self.master= wx.ComboBox(self, choices=choices, style=wx.CB_READONLY, size=(25,25))
@@ -62,7 +63,6 @@ class InputPanel(wx.Panel):
         sizer.Add(self.thru, 1, wx.ALL, 5)
 
         self.mute = wx.ToggleButton(self, 0, "Mute")
-        #self.mute.SetValue(1)
         sizer.Add(self.mute, 0)
         self.SetSizerAndFit(sizer)
         
@@ -74,8 +74,8 @@ class InputPanel(wx.Panel):
 
     def update(self, evt=None):
         """ Send OSC messages """
-        gain=self.gain.slider.GetValue()/100.
-        thru=self.thru.slider.GetValue()/100.
+        gain=self.gain.GetValue() 
+        thru=self.thru.GetValue()
         if self.mute.GetValue(): gain, thru = 0.,0.
         sendOSCSafe("/input", [gain, thru])
 
@@ -107,8 +107,8 @@ class DelayPanel(wx.Panel):
 
     def update(self, evt):
         """ Send OSC messages """
-        a=self.delayTime.slider.GetValue()/100.
-        b=self.feedback.slider.GetValue()/100.
+        a=self.delayTime.GetValue()
+        b=self.feedback.GetValue()
         sendOSCSafe("/delay", [a, b])
 
     def switchMetronome(self, evt):
@@ -137,10 +137,6 @@ class Channel(wx.Panel):
         wx.Panel.__init__(self, parent)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        #label = wx.StaticText(self, label="CH%d" % self.index)
-        #font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
-        #sizer.Add(label, 0, wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
-
         self.gain = OSCSlider(self, "Gain", default_value=1, max_value=1.3, align=False)
         sizer.Add(self.gain, 0, wx.ALL|wx.EXPAND, 3)
 
@@ -168,9 +164,9 @@ class Channel(wx.Panel):
         self.update()
 
     def update(self, evt=None):
-        gain=self.gain.GetValue()/100.
-        pan=self.pan.GetValue()/100.
-        fxsend=self.fxsend.GetValue()/100.
+        gain=self.gain.GetValue()
+        pan=self.pan.GetValue()
+        fxsend=self.fxsend.GetValue()
         if self.mute.GetValue(): gain=0.0;
         sendOSCSafe("/channel", [self.index, gain, pan, fxsend])
 
@@ -219,11 +215,6 @@ class FXPanel(wx.Panel):
         font = label.GetFont(); font.SetWeight(wx.BOLD); label.SetFont(font) 
         sizer.Add(label, 0, wx.EXPAND|wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
-        #choices=["Low pass filter", "High pass filter", "Reverb"]
-        #self.fxtype= wx.ComboBox(self, choices=choices, style=wx.CB_READONLY, size=(25,25))
-        #sizer.Add(self.fxtype, 1, wx.ALL|wx.EXPAND, 5)
-        #self.fxtype.SetValue(choices[0])
-
         self.lpf=OSCSlider(self, "", default_value=0, align=False)
         sizer.Add(self.lpf, 2, wx.EXPAND|wx.ALL, 5)
         self.lpf.Bind(wx.EVT_SCROLL, self.update)
@@ -232,7 +223,7 @@ class FXPanel(wx.Panel):
         self.update(None)
 
     def update(self, evt):
-        a=self.lpf.slider.GetValue()/100.
+        a=self.lpf.GetValue()
         sendOSCSafe("/fx", [a])
 
 class OutputPanel(wx.Panel):
@@ -249,15 +240,15 @@ class OutputPanel(wx.Panel):
         self.level=OSCSlider(self, "Level", default_value=.8, align=False)
         sizer.Add(self.level, 2, wx.EXPAND|wx.ALL, 5)
 
-        self.gauge = wx.Gauge(self, size=(40,10))
-        sizer.Add(self.gauge, 1, wx.EXPAND|wx.ALL, 5)
+        #self.gauge = wx.Gauge(self, size=(40,10))
+        #sizer.Add(self.gauge, 1, wx.EXPAND|wx.ALL, 5)
 
         self.SetSizerAndFit(sizer)
 
     """
     def update(self, evt):
-        a=self.delayTime.slider.GetValue()/100.
-        b=self.feedback.slider.GetValue()/100.
+        a=self.delayTimeGetValue()
+        b=self.feedbackGetValue()
         sendOSCSafe("/delay", [a, b])
     """
 
