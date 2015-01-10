@@ -1,20 +1,24 @@
 // TODO: turn off adcThru when recording
 // TODO: Effects break panning for some unknown reason
-
-// Capture mic/line in and monitor through DAC. Limit
-adc => Dyno inputLimiter => Gain adcThru => dac; // Monitor input 
-inputLimiter.limit(); 
-inputLimiter @=> UGen @ mainInput;
+// TODO: currently I don't turn ADC thru back on after recording
 
 // Effects chain with limiters, reverb, filters
-PRCRev reverb => LPF lpf => Dyno outputLimiter => dac;
+NRev reverb => LPF lpf => HPF hpf => Dyno outputLimiter => dac;
 outputLimiter.limit();
 reverb @=> UGen @ outputWet; // Reference to wet output
 outputLimiter @=> UGen @ outputDry; // Reference to dry output
+outputLimiter @=> UGen @ mainOutput; // Reference to main output
+
+// Capture mic/line in and monitor through DAC. Limit
+adc => Dyno inputLimiter => Gain adcThru => mainOutput; // Monitor input 
+inputLimiter.limit(); 
+inputLimiter @=> UGen @ mainInput;
+
 
 // Default parameters
 .5 => adcThru.gain;
 10000 => lpf.freq;
+10 => hpf.freq;
 1::second => dur loopTime;
 
 // Plug in the pedals
@@ -41,6 +45,7 @@ while (true) {
             msg.getFloat(0)::second => loopTime;
             msg.getFloat(1) => float feedback;
             for( 0 => int i; i < pedals.cap(); i++ ) { 
+                //pedals[i].setLoopPoint(loopTime + (i*.1)::second); 
                 pedals[i].setLoopPoint(loopTime); 
                 pedals[i].setFeedback(feedback);
             }
@@ -64,6 +69,11 @@ while (true) {
         }
         else if(msg.address=="/fx") {
             (100+msg.getFloat(0)*10000) => lpf.freq;
+            (100+msg.getFloat(1)*10000) => hpf.freq;
+            msg.getFloat(2) => reverb.mix;
+        }
+        else if(msg.address=="/master") {
+            msg.getFloat(0) => mainOutput.gain;
         }
     } 
 }
@@ -98,6 +108,7 @@ public class LoopPedal
     }
 
     public void arm(int value) {
+        0 => adcThru.gain;
         sample.playPos() => sample.recPos;
         value => sample.record;
     }
@@ -121,32 +132,8 @@ public class LoopPedal
 //spork ~plip();
 //spork ~vu_meter();
 
-fun void vu_meter()
-{
-    // Analysis stuff
-    adc => FFT fft =^ RMS rms => blackhole;
-    1<<12 => int fftsize;
-    fftsize => fft.size;
-    Windowing.hann(fftsize) => fft.window;
-
-    // Comms
-    OscOut xmit; xmit.dest( "localhost", 6649 );
-
-    // Infinite loop: get RMS and send to GUI
-    while(true)
-    {
-        rms.upchuck() @=> UAnaBlob blob;
-        xmit.start("/vu");
-        blob.fval(0) => xmit.add;
-        xmit.send();
-        fft.size()::samp => now;
-    }
-}
-
-
-
 // TODO timing here should be done using events
-fun void plip()
+fun void metronome()
 {
     SinOsc s => dac;
     0.01::second => dur plipTime;
