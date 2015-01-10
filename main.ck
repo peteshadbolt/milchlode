@@ -45,7 +45,7 @@ while (true) {
             msg.getFloat(0)::second => loopTime;
             msg.getFloat(1) => float feedback;
             for( 0 => int i; i < pedals.cap(); i++ ) { 
-                pedals[i].setLoopPoint(loopTime); 
+                pedals[i].setLoopPoint(loopTime + (i*.1)::second); 
                 pedals[i].setFeedback(feedback);
             }
          }
