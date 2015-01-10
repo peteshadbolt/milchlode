@@ -131,30 +131,6 @@ public class LoopPedal
 //spork ~plip();
 //spork ~vu_meter();
 
-fun void vu_meter()
-{
-    // Analysis stuff
-    adc => FFT fft =^ RMS rms => blackhole;
-    1<<12 => int fftsize;
-    fftsize => fft.size;
-    Windowing.hann(fftsize) => fft.window;
-
-    // Comms
-    OscOut xmit; xmit.dest( "localhost", 6649 );
-
-    // Infinite loop: get RMS and send to GUI
-    while(true)
-    {
-        rms.upchuck() @=> UAnaBlob blob;
-        xmit.start("/vu");
-        blob.fval(0) => xmit.add;
-        xmit.send();
-        fft.size()::samp => now;
-    }
-}
-
-
-
 // TODO timing here should be done using events
 fun void metronome()
 {

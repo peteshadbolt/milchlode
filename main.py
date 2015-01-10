@@ -1,4 +1,3 @@
-from libs.simpleosc import *
 import wx
 
 #TODO: standardize methods for adding/removing arrays of widgets
@@ -11,18 +10,25 @@ def sendOSCSafe(channel, data):
         print "OSC comms error"
 
 class OSCSlider(wx.Panel):
-    ''' A GUI slider '''
-    def __init__(self, parent, label, min_value=0, max_value=1, default_value=0, align=True):
-        ''' Constructor '''
+    """ A GUI slider """
+    def __init__(self, parent, label, min_value=0, max_value=1, default_value=0, align=True, rescale=100.):
+        """ Constructor """
+        self.rescale=rescale
         wx.Panel.__init__(self, parent)
         sizer=wx.BoxSizer(wx.HORIZONTAL)
-        label=wx.StaticText(self, label=label, size=(100,15) if align else None)
+        label=wx.StaticText(self, label=label, \
+                size=(100,15) if align else None)
         sizer.Add(label, 0, wx.RIGHT, 10)
-        self.slider=wx.Slider(self, value=default_value*100, minValue=min_value*100, maxValue=max_value*100)
+        self.slider=wx.Slider(self, value=default_value*self.rescale, \
+                minValue=min_value*self.rescale, maxValue=max_value*self.rescale)
         sizer.Add(self.slider, 1, wx.EXPAND)
+
         self.SetSizerAndFit(sizer)
         self.Bind=self.slider.Bind
-        self.GetValue=self.slider.GetValue
+
+    def GetValue(self):
+        """ Make sure that we rescale """
+        return self.slider.GetValue()/self.rescale
 
 class CommsPanel(wx.Panel):
     """ OSC comms """
@@ -282,10 +288,6 @@ class MainGUI(wx.Frame):
         self.build()
 
     def run(self): self.app.MainLoop()
-
-    def update_vu(self, a,b,c,d):
-        level=int(1000000*c[0])
-        self.output.gauge.SetValue(level)
 
     def build(self):
         """ Builds the various pieces of the GUI """
