@@ -1,7 +1,7 @@
-// TODO: turn off adcThru when recording
-// TODO: Effects break panning for some unknown reason
-// TODO: currently I don't turn ADC thru back on after recording
-// Effects chain with limiters, reverb, filters
+//TODO: turn off adcThru when recording, and turn it back on afterwards
+//TODO: Effects break panning for some unknown reason
+//TODO varying number of bars
+//TODO: Subdivide metronome (still a bit wierd)
 NRev reverb => LPF lpf => HPF hpf => Dyno outputLimiter => dac;
 outputLimiter.limit();
 reverb @=> UGen @ outputWet; // Reference to wet output
@@ -13,12 +13,12 @@ adc => Dyno inputLimiter => Gain adcThru => mainOutput; // Monitor input
 inputLimiter.limit(); 
 inputLimiter @=> UGen @ mainInput;
 
-
 // Default parameters
-.5 => adcThru.gain;
+.5 => float adcThruLevel;
+1 => int adcThruMute;
+adcThruLevel * adcThruMute => adcThru.gain;
 10000 => lpf.freq;
 10 => hpf.freq;
-//1::second => dur loopTime;
 
 // Plug in the pedals
 LoopPedal pedals[4];
@@ -42,7 +42,8 @@ while (true) {
     while (oin.recv(msg)) { 
         if (msg.address=="/input") {
             msg.getFloat(0) => adc.gain;
-            msg.getFloat(1) => adcThru.gain;
+            msg.getFloat(1) => adcThruLevel;
+            adcThruLevel * adcThruMute => adcThru.gain;
         }
         else if(msg.address=="/delay") {
             msg.getFloat(0)::second => dur loopTime;
@@ -60,10 +61,12 @@ while (true) {
         }
         else if(msg.address=="/arm") {
             msg.getInt(0) => int channel;
+            (channel<0) => adcThruMute;
+            adcThruLevel * adcThruMute => adcThru.gain;
             for( 0 => int i; i < pedals.cap(); i++ ) { pedals[i].arm(i==channel); }
         }
         else if(msg.address=="/metronome") {
-            //msg.getInt(0) => metronomeLevel;
+            metronome.mute(msg.getInt(0));
         }
         else if(msg.address=="/clear") {
             msg.getInt(0) => int channel;
@@ -102,7 +105,11 @@ class LoopPedal
     public void setWet( float ratio ) { ratio => wet.gain; 1-ratio => dry.gain;} 
     public void clear() { sample.clear(); }
     public void recordFrom(UGen ugen) { ugen => sample; }
-    public dur remaining() { return sample.loopEnd() - sample.playPos(); }
+    public dur remaining() { sample.loopEnd() => dur ltime; return (ltime - sample.playPos()) % (ltime/4.); }
+    public int beat() { 
+        sample.loopEnd() => dur ltime; 
+        return Math.floor(((ltime - sample.playPos()) / (ltime/4.))) $ int;
+    }
 
     public void outputTo(UGen wetSink, UGen drySink) { 
         1 => sample.play; 
@@ -111,7 +118,6 @@ class LoopPedal
     }
 
     public void arm(int value) {
-        0 => adcThru.gain;
         sample.playPos() => sample.recPos;
         value => sample.record;
     }
@@ -121,54 +127,21 @@ class LoopPedal
 class Metronome
 {
     // A simple metronome
-    SinOsc s => ADSR a => dac;
+    SinOsc s => ADSR a;
     0.5 => s.gain;
-    a.set(0.01, .1, .5, .2);
+    a.set(0.001, .1, .5, .05);
     0.01::second => dur plipTime;
 
-    fun void run()
-    {
+    fun void mute(int value) {
+        if (value){ a => dac; } else { a =< dac; }
+    }
+
+    fun void run() {
         while(true){
+            <<< pedals[0].beat() >>>;
             pedals[0].remaining() => now;
-            a.keyOn();
-            plipTime => now;
-            a.keyOff();
+            500 + 500*(pedals[0].beat()==0) => s.freq;
+            a.keyOn(); plipTime => now; a.keyOff();
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-// Start the metronome and the vu meter (optional)
-//0 => int metronomeLevel;
-//spork ~plip();
-//spork ~vu_meter();
-
-// TODO timing here should be done using events
-fun void metronome()
-{
-    SinOsc s => dac;
-    0.01::second => dur plipTime;
-
-    while(true){
-        for( 0 => int i; i < 4; i++ ) { 
-            if (i==0){2000 => s.freq;} else {1000 => s.freq;}
-            .1*metronomeLevel => s.gain;
-            plipTime => now;
-            0 => s.gain;
-            loopTime/4 - plipTime => now;
-        }
-    }
-
-}
-*/
