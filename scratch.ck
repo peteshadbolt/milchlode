@@ -1,26 +1,44 @@
-1::second => dur loopTime;
+// the event
+KBHit kb;
 
-fun void plip()
-{
-    SinOsc s => dac;
-    0.05::second => dur plipTime;
-    2000 => s.freq;
+class MetronomeEvent extends Event{ int value; }
 
-    while(true){
-        .1 => s.gain;
-        plipTime => now;
-        0 => s.gain;
-        loopTime - plipTime => now;
+class Metronome {
+    MetronomeEvent metronomeEvent;
+    spork ~pulse();
+
+    fun void listen(){
+        while (true){
+            metronomeEvent => now;
+            <<<"Metronome got event " + metronomeEvent.value>>>;
+            if (metronomeEvent.value==0){
+                spork ~pulse();
+            }
+        }
     }
 
+    fun void pulse(){
+       1::second => now; 
+       0=>metronomeEvent.value;
+       metronomeEvent.signal();
+    }
+
+    fun void signal(){
+        1=>metronomeEvent.value;
+        metronomeEvent.signal();
+    }
 }
 
-spork ~plip();
+Metronome m;
+spork ~m.listen();
 
-while(true){
-    1::second => now;
-    loopTime - 0.1::second => loopTime;
+// time-loop
+while( true )
+{
+    kb => now;
+    while( kb.more() )
+    {
+        <<< "ascii: ", kb.getchar() >>>;
+        m.signal();
+    }
 }
-
-
-

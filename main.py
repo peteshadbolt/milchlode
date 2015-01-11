@@ -3,7 +3,7 @@ import wx
 
 def sendOSCSafe(channel, data):
     try:
-        print channel, data
+        #print channel, data
         sendOSCMsg(channel, data)
     except OSCClientError:
         print "OSC comms error"
@@ -115,7 +115,7 @@ class DelayPanel(wx.Panel):
         label.SetFont(font)
         sizer.Add(label, 0, wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
 
-        self.delayTime = OSCSlider(self, "Time", default_value=1, max_value=10, align=False)
+        self.delayTime = OSCSlider(self, "Time", default_value=1, max_value=10, min_value=0.5, align=False)
         sizer.Add(self.delayTime, 1, wx.ALL, 5)
 
         self.feedback = OSCSlider(self, "Hold", default_value=.99, align=False)

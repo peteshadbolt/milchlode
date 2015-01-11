@@ -1,7 +1,6 @@
 // TODO: turn off adcThru when recording
 // TODO: Effects break panning for some unknown reason
 // TODO: currently I don't turn ADC thru back on after recording
-
 // Effects chain with limiters, reverb, filters
 NRev reverb => LPF lpf => HPF hpf => Dyno outputLimiter => dac;
 outputLimiter.limit();
@@ -19,7 +18,7 @@ inputLimiter @=> UGen @ mainInput;
 .5 => adcThru.gain;
 10000 => lpf.freq;
 10 => hpf.freq;
-1::second => dur loopTime;
+//1::second => dur loopTime;
 
 // Plug in the pedals
 LoopPedal pedals[4];
@@ -27,6 +26,10 @@ for( 0 => int i; i < pedals.cap(); i++ ) {
     pedals[i].recordFrom(mainInput);  
     pedals[i].outputTo(outputWet, outputDry); 
 }
+
+// Create the metronome
+Metronome metronome;
+spork ~metronome.run();
 
 // Start listening to OSC messages
 OscIn oin; 9000 => oin.port; 
@@ -42,10 +45,9 @@ while (true) {
             msg.getFloat(1) => adcThru.gain;
         }
         else if(msg.address=="/delay") {
-            msg.getFloat(0)::second => loopTime;
+            msg.getFloat(0)::second => dur loopTime;
             msg.getFloat(1) => float feedback;
             for( 0 => int i; i < pedals.cap(); i++ ) { 
-                //pedals[i].setLoopPoint(loopTime + (i*.1)::second); 
                 pedals[i].setLoopPoint(loopTime); 
                 pedals[i].setFeedback(feedback);
             }
@@ -78,7 +80,7 @@ while (true) {
     } 
 }
 
-public class LoopPedal
+class LoopPedal
 {
     // We are wrapping a live sampler, LiSa
     LiSa sample;
@@ -100,6 +102,7 @@ public class LoopPedal
     public void setWet( float ratio ) { ratio => wet.gain; 1-ratio => dry.gain;} 
     public void clear() { sample.clear(); }
     public void recordFrom(UGen ugen) { ugen => sample; }
+    public dur remaining() { return sample.loopEnd() - sample.playPos(); }
 
     public void outputTo(UGen wetSink, UGen drySink) { 
         1 => sample.play; 
@@ -114,6 +117,25 @@ public class LoopPedal
     }
 }
 
+
+class Metronome
+{
+    // A simple metronome
+    SinOsc s => ADSR a => dac;
+    0.5 => s.gain;
+    a.set(0.01, .1, .5, .2);
+    0.01::second => dur plipTime;
+
+    fun void run()
+    {
+        while(true){
+            pedals[0].remaining() => now;
+            a.keyOn();
+            plipTime => now;
+            a.keyOff();
+        }
+    }
+}
 
 
 
