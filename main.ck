@@ -107,8 +107,8 @@ class LoopPedal
     public void recordFrom(UGen ugen) { ugen => sample; }
     public dur remaining() { sample.loopEnd() => dur ltime; return (ltime - sample.playPos()) % (ltime/4.); }
     public int beat() { 
-        sample.loopEnd() => dur ltime; 
-        return Math.floor(((ltime - sample.playPos()) / (ltime/4.))) $ int;
+        <<< 4*sample.playPos()/sample.loopEnd()>>>;
+        return Math.round(4 * sample.playPos() / sample.loopEnd()) $ int;
     }
 
     public void outputTo(UGen wetSink, UGen drySink) { 
@@ -138,10 +138,9 @@ class Metronome
 
     fun void run() {
         while(true){
-            <<< pedals[0].beat() >>>;
-            pedals[0].remaining() => now;
-            500 + 500*(pedals[0].beat()==0) => s.freq;
+            500 + 500*(pedals[0].beat()==1) => s.freq;
             a.keyOn(); plipTime => now; a.keyOff();
+            pedals[0].remaining() => now;
         }
     }
 }
