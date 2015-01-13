@@ -259,11 +259,11 @@ class FXPanel(wx.Panel):
         label.SetFont(font)
         sizer.Add(label, 0, wx.EXPAND | wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
 
-        self.lpf = OSCSlider(self, "Lo-pass", default_value=.5, align=False)
+        self.lpf = OSCSlider(self, "Lo-pass", default_value=.9, align=False)
         sizer.Add(self.lpf, 2, wx.EXPAND | wx.ALL, 5)
         self.lpf.Bind(wx.EVT_SCROLL, self.update)
 
-        self.hpf = OSCSlider(self, "Hi-pass", min_value=0, default_value=.5, align=False)
+        self.hpf = OSCSlider(self, "Hi-pass", min_value=0, default_value=.1, align=False)
         sizer.Add(self.hpf, 2, wx.EXPAND | wx.ALL, 5)
         self.hpf.Bind(wx.EVT_SCROLL, self.update)
 

@@ -105,10 +105,10 @@ class LoopPedal
     public void setWet( float ratio ) { ratio => wet.gain; 1-ratio => dry.gain;} 
     public void clear() { sample.clear(); }
     public void recordFrom(UGen ugen) { ugen => sample; }
-    public dur remaining() { sample.loopEnd() => dur ltime; return (ltime - sample.playPos()) % (ltime/4.); }
-    public int beat() { 
-        <<< 4*sample.playPos()/sample.loopEnd()>>>;
-        return Math.round(4 * sample.playPos() / sample.loopEnd()) $ int;
+    public int beat() { return Math.round(4 * sample.playPos() / sample.loopEnd()) $ int; }
+    public dur remaining() { 
+        sample.loopEnd() => dur ltime; 
+        return (ltime - sample.playPos()) % (ltime/4.); 
     }
 
     public void outputTo(UGen wetSink, UGen drySink) { 
