@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# coding: utf-8
 from libs.simpleosc import *
 import wx
 
@@ -186,7 +188,7 @@ class Channel(wx.Panel):
         self.speed.SetValue(choices[0])
         sizer.Add(self.speed, 0, wx.ALL | wx.EXPAND, 3)
 
-        choices = ["Live ->", "Live <->", "loop1.wav", "loop2.wav", "loop3.wav"]
+        choices = ["Live →", "Live ←", "Live ↔", "loop1.wav", "loop2.wav", "loop3.wav"]
         self.speed = wx.ComboBox(self, choices=choices, style=wx.CB_READONLY, size=(25, 25))
         self.speed.SetValue(choices[0])
         sizer.Add(self.speed, 0, wx.ALL | wx.EXPAND, 3)
