@@ -3,11 +3,8 @@
 ![Screenshot](screenshot.png)
 
 ## TODO
-- Fix metronome sync
+- OSC sync over ethernet
 - 2x, 4x, 1.13x
 - Bidirectional, reverse play
 - 1/2 rate
-- FX chain: Reverb, LPF, HPF, per-channel wet/dry
-- Output level
-- VU meters on input/output
-- OSC sync over ethernet
+- VU meters
