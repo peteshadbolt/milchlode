@@ -75,9 +75,9 @@ class InputPanel(wx.Panel):
         label.SetFont(font)
         sizer.Add(label, 0, wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
 
-        self.gain = OSCSlider(self, "Gain", default_value=.5, align=False)
+        self.gain = OSCSlider(self, "Gain", default_value=.5, max_value = 1.2, align=False)
         sizer.Add(self.gain, 1, wx.ALL, 5)
-        self.thru = OSCSlider(self, "Thru", default_value=.5, align=False)
+        self.thru = OSCSlider(self, "Thru", default_value=1, max_value = 1.2, align=False)
         sizer.Add(self.thru, 1, wx.ALL, 5)
 
         self.mute = wx.ToggleButton(self, 0, "Mute")
@@ -115,7 +115,7 @@ class DelayPanel(wx.Panel):
         label.SetFont(font)
         sizer.Add(label, 0, wx.TOP | wx.BOTTOM | wx.RIGHT, 5)
 
-        self.delayTime = OSCSlider(self, "Time", default_value=1, max_value=10, min_value=0.5, align=False)
+        self.delayTime = OSCSlider(self, "Time", default_value=2, max_value=10, min_value=0.5, align=False)
         sizer.Add(self.delayTime, 1, wx.ALL, 5)
 
         self.feedback = OSCSlider(self, "Hold", default_value=.99, align=False)

@@ -1,7 +1,6 @@
 //TODO: turn off adcThru when recording, and turn it back on afterwards
 //TODO: Effects break panning for some unknown reason
 //TODO varying number of bars
-//TODO: Subdivide metronome (still a bit wierd)
 NRev reverb => LPF lpf => HPF hpf => Dyno outputLimiter => dac;
 outputLimiter.limit();
 reverb @=> UGen @ outputWet; // Reference to wet output
@@ -14,7 +13,7 @@ inputLimiter.limit();
 inputLimiter @=> UGen @ mainInput;
 
 // Default parameters
-.5 => float adcThruLevel;
+1 => float adcThruLevel;
 1 => int adcThruMute;
 adcThruLevel * adcThruMute => adcThru.gain;
 10000 => lpf.freq;
@@ -105,11 +104,7 @@ class LoopPedal
     public void setWet( float ratio ) { ratio => wet.gain; 1-ratio => dry.gain;} 
     public void clear() { sample.clear(); }
     public void recordFrom(UGen ugen) { ugen => sample; }
-    public int beat() { return Math.round(4 * sample.playPos() / sample.loopEnd()) $ int; }
-    public dur remaining() { 
-        sample.loopEnd() => dur ltime; 
-        return (ltime - sample.playPos()) % (ltime/4.); 
-    }
+    public dur remaining() { return sample.loopEnd() - sample.playPos(); }
 
     public void outputTo(UGen wetSink, UGen drySink) { 
         1 => sample.play; 
@@ -130,17 +125,28 @@ class Metronome
     SinOsc s => ADSR a;
     0.5 => s.gain;
     a.set(0.001, .1, .5, .05);
-    0.01::second => dur plipTime;
+    10::ms => dur plipTime;
 
     fun void mute(int value) {
         if (value){ a => dac; } else { a =< dac; }
     }
 
     fun void run() {
-        while(true){
-            500 + 500*(pedals[0].beat()==1) => s.freq;
-            a.keyOn(); plipTime => now; a.keyOff();
-            pedals[0].remaining() => now;
-        }
+            while(true) {
+                // Compute the beat time
+                pedals[0].sample.loopEnd()/4. - plipTime => dur beatTime;
+
+                // Beep four times
+                1000 => s.freq;
+                a.keyOn(); plipTime => now; a.keyOff();
+                beatTime => now;
+                500 => s.freq;
+                a.keyOn(); plipTime => now; a.keyOff();
+                beatTime => now;
+                a.keyOn(); plipTime => now; a.keyOff();
+                beatTime => now;
+                a.keyOn(); plipTime => now; a.keyOff();
+                pedals[0].remaining() => now; // Sync
+            }
     }
 }
