@@ -88,23 +88,25 @@ class LoopPedal
     LiSa sample;
     sample => Gain wet;
     sample => Gain dry;
+    dur loopTime;
 
     // Setup
     10::second => sample.duration;  // Allocate max 10 secs of memory
     0::second => sample.recPos => sample.playPos;
     1.0 => sample.feedback;
     1 => sample.loop;
+    /*.5 => sample.rate;*/
     setLoopPoint(1::second);
     setWet(0.5);
 
-    public void setLoopPoint( dur length ) { length => sample.loopEnd => sample.loopEndRec; }
+    public void setLoopPoint( dur length ) { length => loopTime => sample.loopEnd => sample.loopEndRec; }
     public void setFeedback( float fb ) { fb => sample.feedback; }
     public void setGain( float gain ) { gain => sample.gain; }
     public void setPan( float pan ) { } //pan => panner.pan; }
     public void setWet( float ratio ) { ratio => wet.gain; 1-ratio => dry.gain;} 
     public void clear() { sample.clear(); }
     public void recordFrom(UGen ugen) { ugen => sample; }
-    public dur remaining() { return sample.loopEnd() - sample.playPos(); }
+    public dur remaining() { return loopTime - sample.playPos(); }
 
     public void outputTo(UGen wetSink, UGen drySink) { 
         1 => sample.play; 
@@ -124,7 +126,7 @@ class Metronome
     // A simple metronome
     SinOsc s => ADSR a;
     0.5 => s.gain;
-    a.set(0.001, .1, .5, .05);
+    a.set(0.001, .1, .5, .13);
     10::ms => dur plipTime;
 
     fun void mute(int value) {
@@ -134,13 +136,13 @@ class Metronome
     fun void run() {
             while(true) {
                 // Compute the beat time
-                pedals[0].sample.loopEnd()/4. - plipTime => dur beatTime;
+                pedals[0].loopTime/4. - plipTime => dur beatTime;
 
                 // Beep four times
-                1000 => s.freq;
+                50 => s.freq;
                 a.keyOn(); plipTime => now; a.keyOff();
                 beatTime => now;
-                500 => s.freq;
+                50 => s.freq;
                 a.keyOn(); plipTime => now; a.keyOff();
                 beatTime => now;
                 a.keyOn(); plipTime => now; a.keyOff();
