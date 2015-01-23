@@ -188,16 +188,18 @@ class Channel(wx.Panel):
         self.speed.SetValue(choices[0])
         sizer.Add(self.speed, 0, wx.ALL | wx.EXPAND, 3)
 
-        choices = ["Live →", "Live ←", "Live ↔", "loop1.wav", "loop2.wav", "loop3.wav"]
-        self.speed = wx.ComboBox(self, choices=choices, style=wx.CB_READONLY, size=(25, 25))
-        self.speed.SetValue(choices[0])
-        sizer.Add(self.speed, 0, wx.ALL | wx.EXPAND, 3)
+        choices = ["Live →", "Live ←", "Live ↔", "Half speed"]
+        self.direction = wx.ComboBox(self, choices=choices, style=wx.CB_READONLY, size=(25, 25))
+        self.direction.SetValue(choices[0])
+        sizer.Add(self.direction, 0, wx.ALL | wx.EXPAND, 3)
 
         self.SetSizerAndFit(sizer)
 
         self.gain.Bind(wx.EVT_SCROLL, self.update)
         self.pan.Bind(wx.EVT_SCROLL, self.update)
         self.fxsend.Bind(wx.EVT_SCROLL, self.update)
+        self.speed.Bind(wx.EVT_COMBOBOX, self.update_multiplier)
+        self.direction.Bind(wx.EVT_TOGGLEBUTTON, self.update_direction)
         self.mute.Bind(wx.EVT_TOGGLEBUTTON, self.update)
         self.update()
 
@@ -205,9 +207,22 @@ class Channel(wx.Panel):
         gain = self.gain.GetValue() 
         pan = self.pan.GetValue() 
         fxsend = self.fxsend.GetValue() 
-        if self.mute.GetValue():
-            gain = 0.0
+        if self.mute.GetValue(): gain = 0.0
         sendOSCSafe("/channel", [self.index, gain, pan, fxsend])
+
+    def update_multiplier(self, evt=None):
+        multiplierTable = {"1 bar": 1., "2 bars": 2., "4 bars": 4., "Dephase": 1.3}
+        multiplier = multiplierTable[self.speed.GetValue()]
+        sendOSCSafe("/multiplier", [self.index, multiplier])
+
+    def update_direction(self, evt=None):
+        #multiplierTable = {"1 bar": 1., "2 bars": 2., "4 bars": 4., "Dephase": 1.3}
+        directionTable = {"Live →":0, "Live ←"1, "Live ↔"2, "Half speed"3}
+
+        direction = directionTable[self.speed.GetValue()]
+        sendOSCSafe("/direction", [self.index, direction])
+
+
 
 
 class Mixer(wx.Panel):
