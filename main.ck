@@ -65,6 +65,10 @@ while (true) {
             msg.getInt(0) => int i;
             pedals[i].setLoopPoint(globalLoopTime * msg.getFloat(1));
         }
+        else if(msg.address=="/direction"){
+            msg.getInt(0) => int i;
+            pedals[i].setDirection(msg.getFloat(1));
+        }
         else if(msg.address=="/arm") {
             msg.getInt(0) => int channel;
             (channel<0) => adcThruMute;
@@ -111,6 +115,9 @@ class LoopPedal
     public void setLoopPoint( dur length ) { 
         length => loopTime => sample.loopEnd => sample.loopEndRec; 
     }
+    public void setDirection( float direction ) { 
+        direction => sample.rate;
+    }
     public void setFeedback( float fb ) { fb => sample.feedback; }
     public void setGain( float gain ) { gain => sample.gain; }
     public void setPan( float pan ) { pan => dry.pan; }
@@ -139,7 +146,6 @@ class Metronome
     // A simple metronome
     SinOsc s => ADSR a;
     60 => s.freq;
-    0.5 => s.gain;
     0.6 => s.gain;
     a.set(0.001, .1, .5, .13);
     10::ms => dur plipTime;

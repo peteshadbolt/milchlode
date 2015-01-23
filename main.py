@@ -188,7 +188,7 @@ class Channel(wx.Panel):
         self.speed.SetValue(choices[0])
         sizer.Add(self.speed, 0, wx.ALL | wx.EXPAND, 3)
 
-        choices = ["Live →", "Live ←", "Live ↔", "Half speed"]
+        choices = ["Forward", "Back", "Half", "Double"]
         self.direction = wx.ComboBox(self, choices=choices, style=wx.CB_READONLY, size=(25, 25))
         self.direction.SetValue(choices[0])
         sizer.Add(self.direction, 0, wx.ALL | wx.EXPAND, 3)
@@ -199,7 +199,7 @@ class Channel(wx.Panel):
         self.pan.Bind(wx.EVT_SCROLL, self.update)
         self.fxsend.Bind(wx.EVT_SCROLL, self.update)
         self.speed.Bind(wx.EVT_COMBOBOX, self.update_multiplier)
-        self.direction.Bind(wx.EVT_TOGGLEBUTTON, self.update_direction)
+        self.direction.Bind(wx.EVT_COMBOBOX, self.update_direction)
         self.mute.Bind(wx.EVT_TOGGLEBUTTON, self.update)
         self.update()
 
@@ -217,9 +217,9 @@ class Channel(wx.Panel):
 
     def update_direction(self, evt=None):
         #multiplierTable = {"1 bar": 1., "2 bars": 2., "4 bars": 4., "Dephase": 1.3}
-        directionTable = {"Live →":0, "Live ←"1, "Live ↔"2, "Half speed"3}
+        directionTable = {"Forward":1., "Back":-1., "Half":.5, "Double":2.}
 
-        direction = directionTable[self.speed.GetValue()]
+        direction = directionTable[self.direction.GetValue()]
         sendOSCSafe("/direction", [self.index, direction])
 
 
